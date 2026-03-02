@@ -1,0 +1,47 @@
+version: '3.8'
+
+# Development overrides - use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+services:
+  auth_service:
+    build:
+      context: ./backend/services/auth
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend/services/auth:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      DEBUG: "true"
+      ENVIRONMENT: development
+
+  ingestion_service:
+    volumes:
+      - ./backend/services/ingestion:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      DEBUG: "true"
+      ENVIRONMENT: development
+
+  analytics_service:
+    volumes:
+      - ./backend/services/analytics:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      DEBUG: "true"
+      ENVIRONMENT: development
+
+  ai_service:
+    volumes:
+      - ./backend/services/ai:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      DEBUG: "true"
+      ENVIRONMENT: development
+
+  frontend:
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    environment:
+      NODE_ENV: development
