@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Card,
   CardContent,
@@ -8,35 +10,127 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import CommitChart from '@/components/charts/CommitChart';
+import PRCycleTimeChart from '@/components/charts/PRCycleTimeChart';
+import TeamActivityChart from '@/components/charts/TeamActivityChart';
+import { metricsAPI } from '@/lib/api/metrics';
 
-const weeklyData = [
-  { day: 'Mon', commits: 23, prs: 5 },
-  { day: 'Tue', commits: 31, prs: 8 },
-  { day: 'Wed', commits: 28, prs: 6 },
-  { day: 'Thu', commits: 35, prs: 9 },
-  { day: 'Fri', commits: 42, prs: 12 },
-  { day: 'Sat', commits: 12, prs: 2 },
-  { day: 'Sun', commits: 8, prs: 1 },
+const dateRanges = [
+  { label: '7 days', days: 7 },
+  { label: '14 days', days: 14 },
+  { label: '30 days', days: 30 },
+  { label: '90 days', days: 90 },
 ];
 
-const maxCommits = Math.max(...weeklyData.map((d) => d.commits));
+const generateMockTimeSeries = (days: number, min = 5, max = 40) =>
+  Array.from({ length: days }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (days - 1 - i));
+    return {
+      date: date.toISOString().split('T')[0],
+      value: Math.floor(Math.random() * (max - min)) + min,
+    };
+  });
 
-const repositoryStats = [
-  { name: 'frontend-app', commits: 89, prs: 15, language: 'TypeScript' },
-  { name: 'api-gateway', commits: 67, prs: 12, language: 'Python' },
-  { name: 'auth-service', commits: 45, prs: 8, language: 'Python' },
-  { name: 'mobile-app', commits: 34, prs: 6, language: 'React Native' },
-  { name: 'infra-config', commits: 12, prs: 3, language: 'HCL' },
+const mockContributors = [
+  { github_login: 'alice', commits: 42, additions: 3200, deletions: 800 },
+  { github_login: 'bob', commits: 38, additions: 2800, deletions: 600 },
+  { github_login: 'carol', commits: 35, additions: 2100, deletions: 450 },
+  { github_login: 'david', commits: 28, additions: 1500, deletions: 300 },
+  { github_login: 'eve', commits: 24, additions: 1200, deletions: 200 },
+  { github_login: 'frank', commits: 18, additions: 900, deletions: 150 },
 ];
 
 export default function AnalyticsPage() {
+  const [selectedRange, setSelectedRange] = useState(14);
+  const orgId = 'demo-org';
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - selectedRange);
+  const startStr = startDate.toISOString().split('T')[0];
+  const endStr = new Date().toISOString().split('T')[0];
+
+  const { data: commitSeries } = useQuery({
+    queryKey: ['timeseries-commits', orgId, selectedRange],
+    queryFn: () => metricsAPI.getTimeSeries(orgId, 'commits', startStr, endStr),
+    retry: false,
+  });
+
+  const { data: cycleSeries } = useQuery({
+    queryKey: ['timeseries-cycle', orgId, selectedRange],
+    queryFn: () => metricsAPI.getTimeSeries(orgId, 'cycle_time', startStr, endStr),
+    retry: false,
+  });
+
+  const { data: teamMetrics } = useQuery({
+    queryKey: ['team-metrics-analytics', orgId, selectedRange],
+    queryFn: () => metricsAPI.getTeamMetrics(orgId, startStr, endStr),
+    retry: false,
+  });
+
+  const commitData = commitSeries?.data || generateMockTimeSeries(selectedRange);
+  const cycleData = cycleSeries?.data || generateMockTimeSeries(selectedRange, 2, 24);
+  const contributors = teamMetrics?.top_contributors || mockContributors;
+
+  const totalCommits = commitData.reduce((s, d) => s + d.value, 0);
+  const avgCommitsPerDay = Math.round(totalCommits / selectedRange);
+  const avgCycleTime =
+    Math.round(
+      (cycleData.reduce((s, d) => s + d.value, 0) / cycleData.length) * 10
+    ) / 10;
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Analytics</h1>
-        <p className="text-gray-600 mt-2">
-          Detailed metrics and trends for your team
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Analytics</h1>
+          <p className="text-gray-600 mt-2">
+            Detailed metrics and trends for your team
+          </p>
+        </div>
+
+        {/* Date Range Selector */}
+        <div className="flex items-center space-x-2">
+          {dateRanges.map((range) => (
+            <Button
+              key={range.days}
+              variant={selectedRange === range.days ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedRange(range.days)}
+            >
+              {range.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-2xl font-bold">{totalCommits.toLocaleString()}</div>
+            <p className="text-sm text-gray-500">Total Commits</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-2xl font-bold">{avgCommitsPerDay}</div>
+            <p className="text-sm text-gray-500">Avg Commits/Day</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-2xl font-bold">{avgCycleTime}h</div>
+            <p className="text-sm text-gray-500">Avg Cycle Time</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-2xl font-bold">{contributors.length}</div>
+            <p className="text-sm text-gray-500">Active Contributors</p>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs defaultValue="overview">
@@ -44,137 +138,43 @@ export default function AnalyticsPage() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="commits">Commits</TabsTrigger>
           <TabsTrigger value="prs">Pull Requests</TabsTrigger>
+          <TabsTrigger value="team">Team</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
-            {/* Weekly Activity Chart (simplified bar chart) */}
             <Card>
               <CardHeader>
-                <CardTitle>Weekly Activity</CardTitle>
-                <CardDescription>Commits per day this week</CardDescription>
+                <CardTitle>Commit Activity</CardTitle>
+                <CardDescription>
+                  Commits per day over the last {selectedRange} days
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-end space-x-2 h-48">
-                  {weeklyData.map((d) => (
-                    <div
-                      key={d.day}
-                      className="flex-1 flex flex-col items-center"
-                    >
-                      <div className="text-xs text-gray-500 mb-1">
-                        {d.commits}
-                      </div>
-                      <div
-                        className="w-full bg-blue-500 rounded-t-sm transition-all hover:bg-blue-600"
-                        style={{
-                          height: `${(d.commits / maxCommits) * 150}px`,
-                        }}
-                      />
-                      <div className="text-xs text-gray-500 mt-2">{d.day}</div>
-                    </div>
-                  ))}
-                </div>
+                <CommitChart data={commitData} />
               </CardContent>
             </Card>
 
-            {/* Code Velocity */}
             <Card>
               <CardHeader>
-                <CardTitle>Code Velocity</CardTitle>
-                <CardDescription>Lines of code changed per day</CardDescription>
+                <CardTitle>PR Cycle Time</CardTitle>
+                <CardDescription>
+                  Average hours from PR open to merge
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Additions</span>
-                    <span className="text-sm font-bold text-green-600">
-                      +4,231
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div
-                      className="bg-green-500 h-2 rounded-full"
-                      style={{ width: '72%' }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Deletions</span>
-                    <span className="text-sm font-bold text-red-600">
-                      -1,847
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div
-                      className="bg-red-500 h-2 rounded-full"
-                      style={{ width: '45%' }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <span className="text-sm font-medium">Net Change</span>
-                    <span className="text-sm font-bold text-blue-600">
-                      +2,384
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Files Changed</span>
-                    <span className="text-sm font-bold">187</span>
-                  </div>
-                </div>
+                <PRCycleTimeChart data={cycleData} />
               </CardContent>
             </Card>
           </div>
 
-          {/* Repository Stats */}
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Repository Activity</CardTitle>
-              <CardDescription>
-                Activity breakdown by repository
-              </CardDescription>
+              <CardTitle>Team Contributions</CardTitle>
+              <CardDescription>Developer activity breakdown</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {repositoryStats.map((repo) => (
-                  <div
-                    key={repo.name}
-                    className="flex items-center justify-between py-2"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-gray-400"
-                      >
-                        <path d="M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM18 9a9 9 0 0 1-9 9" />
-                      </svg>
-                      <div>
-                        <p className="text-sm font-medium">{repo.name}</p>
-                        <p className="text-xs text-gray-500">{repo.language}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-6 text-sm">
-                      <div className="text-center">
-                        <p className="font-medium">{repo.commits}</p>
-                        <p className="text-xs text-gray-500">commits</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="font-medium">{repo.prs}</p>
-                        <p className="text-xs text-gray-500">PRs</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <TeamActivityChart contributors={contributors} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -184,28 +184,29 @@ export default function AnalyticsPage() {
             <CardHeader>
               <CardTitle>Commit History</CardTitle>
               <CardDescription>
-                Detailed commit analytics will be available once repositories are
-                connected
+                Detailed commit activity over {selectedRange} days
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-center h-48 text-gray-400">
+              <CommitChart data={commitData} />
+              <div className="mt-6 grid grid-cols-3 gap-4 pt-4 border-t">
                 <div className="text-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="48"
-                    height="48"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="mx-auto mb-3"
-                  >
-                    <path d="M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM18 9a9 9 0 0 1-9 9" />
-                  </svg>
-                  <p>Connect a repository to see commit analytics</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {totalCommits.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-gray-500">Total Commits</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600">
+                    {avgCommitsPerDay}
+                  </p>
+                  <p className="text-sm text-gray-500">Avg per Day</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-purple-600">
+                    {Math.max(...commitData.map((d) => d.value))}
+                  </p>
+                  <p className="text-sm text-gray-500">Peak Day</p>
                 </div>
               </div>
             </CardContent>
@@ -215,30 +216,64 @@ export default function AnalyticsPage() {
         <TabsContent value="prs">
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle>Pull Request Analytics</CardTitle>
-              <CardDescription>
-                PR cycle time, review time, and merge rate analytics
-              </CardDescription>
+              <CardTitle>PR Cycle Time Analysis</CardTitle>
+              <CardDescription>Time from PR creation to merge</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-center h-48 text-gray-400">
+              <PRCycleTimeChart data={cycleData} />
+              <div className="mt-6 grid grid-cols-3 gap-4 pt-4 border-t">
                 <div className="text-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="48"
-                    height="48"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="mx-auto mb-3"
-                  >
-                    <path d="M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM18 9a9 9 0 0 1-9 9" />
-                  </svg>
-                  <p>Connect a repository to see PR analytics</p>
+                  <p className="text-2xl font-bold text-blue-600">{avgCycleTime}h</p>
+                  <p className="text-sm text-gray-500">Average</p>
                 </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600">
+                    {Math.min(...cycleData.map((d) => d.value))}h
+                  </p>
+                  <p className="text-sm text-gray-500">Fastest</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-red-600">
+                    {Math.max(...cycleData.map((d) => d.value))}h
+                  </p>
+                  <p className="text-sm text-gray-500">Slowest</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="team">
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Team Activity</CardTitle>
+              <CardDescription>Individual developer contributions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TeamActivityChart contributors={contributors} />
+              <div className="mt-6 space-y-3 pt-4 border-t">
+                {contributors.map((c, i) => (
+                  <div
+                    key={c.github_login}
+                    className="flex items-center justify-between py-2"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm text-gray-400 w-5">#{i + 1}</span>
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-xs font-medium text-white">
+                        {c.github_login.slice(0, 2).toUpperCase()}
+                      </div>
+                      <span className="font-medium text-sm">{c.github_login}</span>
+                    </div>
+                    <div className="flex items-center space-x-6 text-sm">
+                      <span>
+                        <span className="font-semibold">{c.commits}</span>{' '}
+                        <span className="text-gray-500">commits</span>
+                      </span>
+                      <span className="text-green-600">+{c.additions.toLocaleString()}</span>
+                      <span className="text-red-600">-{c.deletions.toLocaleString()}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
