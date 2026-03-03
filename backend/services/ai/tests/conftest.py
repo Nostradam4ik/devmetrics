@@ -56,12 +56,12 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
 
 
 @pytest.fixture
-def mock_openai():
+def mock_groq():
     """Mock OpenAI service to avoid real API calls in tests."""
-    with patch("app.services.openai_service.openai_service") as mock:
+    with patch("app.services.groq_service.groq_service") as mock:
         mock.generate_insights = AsyncMock(return_value={
             "summary": "Team is performing well with 245 commits this week.",
-            "model_used": "gpt-4-turbo-preview",
+            "model_used": "llama-3.1-70b-versatile",
             "generated_at": "2024-01-01T00:00:00",
         })
         mock.generate_weekly_report = AsyncMock(
@@ -73,5 +73,5 @@ def mock_openai():
         mock.generate_completion = AsyncMock(
             return_value='[{"title": "Reduce PR size", "description": "Keep PRs small", "priority": "high", "category": "process"}]'
         )
-        mock.model = "gpt-4-turbo-preview"
+        mock.model = "llama-3.1-70b-versatile"
         yield mock

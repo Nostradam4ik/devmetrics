@@ -1,14 +1,24 @@
 from openai import AsyncOpenAI
 from typing import Dict, List, Optional
-from app.core.config import settings
+import os
 
 
-class OpenAIService:
-    """Service for OpenAI GPT-4 integration."""
+class GroqService:
+    """Service for Groq LLM integration (Llama 3.1 via OpenAI-compatible API)."""
 
     def __init__(self):
-        self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = settings.OPENAI_MODEL
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("No GROQ_API_KEY found! Set GROQ_API_KEY in .env")
+
+        self.client = AsyncOpenAI(
+            api_key=api_key,
+            base_url="https://api.groq.com/openai/v1",
+        )
+
+        self.model = os.getenv("GROQ_MODEL", "llama-3.1-70b-versatile")
+        self.max_tokens = int(os.getenv("GROQ_MAX_TOKENS", "1500"))
+        self.temperature = float(os.getenv("GROQ_TEMPERATURE", "0.7"))
 
     async def generate_completion(
         self,
@@ -17,7 +27,7 @@ class OpenAIService:
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
     ) -> str:
-        """Generate text completion from GPT-4."""
+        """Generate text completion from Groq Llama."""
         messages = []
 
         if system_prompt:
@@ -28,8 +38,8 @@ class OpenAIService:
         response = await self.client.chat.completions.create(
             model=self.model,
             messages=messages,
-            max_tokens=max_tokens or settings.OPENAI_MAX_TOKENS,
-            temperature=temperature or settings.OPENAI_TEMPERATURE,
+            max_tokens=max_tokens or self.max_tokens,
+            temperature=temperature or self.temperature,
         )
 
         return response.choices[0].message.content
@@ -153,4 +163,5 @@ Provide a clear, concise answer based on the data."""
         return "\n".join(lines)
 
 
-openai_service = OpenAIService()
+# Singleton instance
+groq_service = GroqService()

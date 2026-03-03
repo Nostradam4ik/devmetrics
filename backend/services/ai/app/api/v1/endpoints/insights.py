@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 from datetime import datetime
 from app.core.database import get_db
-from app.services.openai_service import openai_service
+from app.services.groq_service import groq_service
 from app.models.insight import Insight
 from app.schemas.insights import (
     InsightRequest,
@@ -28,7 +28,7 @@ async def generate_insights(
 ):
     """Generate AI insights from metrics data."""
     try:
-        insights = await openai_service.generate_insights(request.metrics_data)
+        insights = await groq_service.generate_insights(request.metrics_data)
 
         # Save to database
         insight = Insight(
@@ -56,7 +56,7 @@ async def generate_weekly_report(
 ):
     """Generate a weekly team report."""
     try:
-        report = await openai_service.generate_weekly_report(request.metrics_data)
+        report = await groq_service.generate_weekly_report(request.metrics_data)
 
         # Save to database
         insight = Insight(
@@ -67,7 +67,7 @@ async def generate_weekly_report(
             summary=report[:500] if report else None,
             severity="info",
             category="report",
-            model_used=openai_service.model,
+            model_used=groq_service.model,
         )
         db.add(insight)
         await db.commit()
@@ -85,7 +85,7 @@ async def generate_weekly_report(
 async def answer_query(request: QueryRequest):
     """Answer natural language query about metrics."""
     try:
-        answer = await openai_service.answer_query(
+        answer = await groq_service.answer_query(
             query=request.query,
             context_data=request.context_data or {},
         )
@@ -112,7 +112,7 @@ async def get_suggestions(
     if recent_insights:
         context = "\n".join([i.content for i in recent_insights if i.content])
         try:
-            suggestions_text = await openai_service.generate_completion(
+            suggestions_text = await groq_service.generate_completion(
                 prompt=f"Based on these recent team insights, provide 3-4 specific improvement suggestions:\n\n{context[:2000]}",
                 system_prompt="You are a software engineering coach. Return suggestions as a JSON array with objects having 'title', 'description', 'priority' (high/medium/low), and 'category' fields. Return ONLY the JSON array, no other text.",
                 temperature=0.5,
