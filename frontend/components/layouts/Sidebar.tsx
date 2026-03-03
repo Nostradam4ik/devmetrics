@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useNotifications } from '@/contexts/NotificationContext';
+import { LiveSyncStatus } from '@/components/ui/live-sync-status';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: 'chart' },
@@ -42,44 +44,86 @@ function NavIcon({ icon, className }: { icon: string; className?: string }) {
   );
 }
 
+function PresenceAvatars({ count }: { count: number }) {
+  if (count <= 1) return null;
+  return (
+    <div className="flex items-center gap-1">
+      {Array.from({ length: Math.min(count - 1, 3) }).map((_, i) => (
+        <span
+          key={i}
+          className="h-5 w-5 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 border-2 border-white"
+          style={{ marginLeft: i > 0 ? '-6px' : 0 }}
+        />
+      ))}
+      {count - 1 > 3 && (
+        <span className="text-xs text-gray-400 ml-1">+{count - 4}</span>
+      )}
+    </div>
+  );
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
+  const { isConnected, onlineUsers } = useNotifications();
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-6">
-        <Link href="/dashboard" className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">D</span>
+    <>
+      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+        <div className="p-6">
+          <Link href="/dashboard" className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">D</span>
+            </div>
+            <span className="text-xl font-bold">DevMetrics</span>
+          </Link>
+        </div>
+
+        <nav className="flex-1 px-4 space-y-1">
+          {navigation.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  'flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-50'
+                )}
+              >
+                <NavIcon icon={item.icon} />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="p-4 border-t border-gray-200 space-y-2">
+          {/* Online presence */}
+          {onlineUsers.length > 0 && (
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
+                {onlineUsers.length} online
+              </span>
+              <PresenceAvatars count={onlineUsers.length} />
+            </div>
+          )}
+          {/* Connection status */}
+          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                isConnected ? 'bg-green-400' : 'bg-gray-300'
+              }`}
+            />
+            {isConnected ? 'Live' : 'Offline'}
           </div>
-          <span className="text-xl font-bold">DevMetrics</span>
-        </Link>
+          <div className="text-xs text-gray-400">2026 DevMetrics</div>
+        </div>
       </div>
-
-      <nav className="flex-1 px-4 space-y-1">
-        {navigation.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                'flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-gray-700 hover:bg-gray-50'
-              )}
-            >
-              <NavIcon icon={item.icon} />
-              <span>{item.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="p-4 border-t border-gray-200">
-        <div className="text-xs text-gray-500">2026 DevMetrics</div>
-      </div>
-    </div>
+      {/* Live sync toast — rendered outside sidebar to avoid overflow clipping */}
+      <LiveSyncStatus />
+    </>
   );
 }

@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Sidebar from '@/components/layouts/Sidebar';
 import Header from '@/components/layouts/Header';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -32,13 +33,19 @@ export default function DashboardLayout({
     return null;
   }
 
+  // Use the user's primary organization ID if available.
+  // Falls back to null (WebSocket won't connect until we have an org).
+  const orgId = (user as { organization_id?: string } | undefined)?.organization_id ?? null;
+
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+    <NotificationProvider orgId={orgId}>
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header />
+          <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        </div>
       </div>
-    </div>
+    </NotificationProvider>
   );
 }

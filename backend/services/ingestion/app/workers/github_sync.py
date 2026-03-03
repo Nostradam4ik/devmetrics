@@ -10,6 +10,12 @@ from app.models.developer import Developer
 from app.models.commit import Commit
 from app.models.pull_request import PullRequest
 from app.core.config import settings
+from app.services.event_publisher import (
+    publish_sync_started,
+    publish_sync_completed,
+    publish_sync_failed,
+    publish_metrics_updated,
+)
 import asyncio
 
 
@@ -36,6 +42,12 @@ async def sync_repository(repository_id: str):
         if not repo or not repo.is_active:
             return {"status": "skipped", "reason": "repository not active"}
 
+        org_id = str(repo.organization_id)
+        repo_name = repo.full_name
+
+        # Notify clients that sync started
+        publish_sync_started(org_id, repo_name)
+
         github_client = GitHubClient(repo.github_access_token)
 
         # Determine sync period
@@ -44,23 +56,31 @@ async def sync_repository(repository_id: str):
         else:
             since = datetime.utcnow() - timedelta(days=settings.FULL_SYNC_DAYS)
 
-        # Sync commits
-        commits_count = await sync_commits(db, github_client, repo, since)
+        try:
+            # Sync commits
+            commits_count = await sync_commits(db, github_client, repo, since)
 
-        # Sync pull requests
-        prs_count = await sync_pull_requests(db, github_client, repo)
+            # Sync pull requests
+            prs_count = await sync_pull_requests(db, github_client, repo)
 
-        # Update last sync time
-        repo.last_synced_at = datetime.utcnow()
-        await db.commit()
+            # Update last sync time
+            repo.last_synced_at = datetime.utcnow()
+            await db.commit()
 
-        return {
-            "status": "success",
-            "repository_id": str(repository_id),
-            "commits": commits_count,
-            "pull_requests": prs_count,
-            "synced_at": datetime.utcnow().isoformat(),
-        }
+            # Notify clients that sync completed
+            publish_sync_completed(org_id, repo_name, commits_count)
+            publish_metrics_updated(org_id)
+
+            return {
+                "status": "success",
+                "repository_id": str(repository_id),
+                "commits": commits_count,
+                "pull_requests": prs_count,
+                "synced_at": datetime.utcnow().isoformat(),
+            }
+        except Exception as e:
+            publish_sync_failed(org_id, repo_name, str(e))
+            raise
 
 
 async def sync_commits(
