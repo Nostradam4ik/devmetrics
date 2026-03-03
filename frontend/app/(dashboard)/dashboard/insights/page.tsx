@@ -11,7 +11,8 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AIChat from '@/components/ai-chat';
 import { insightsAPI, type Insight } from '@/lib/api/insights';
 
 const severityVariant: Record<string, string> = {
@@ -21,7 +22,6 @@ const severityVariant: Record<string, string> = {
   info: 'secondary',
 };
 
-// Fallback mock data
 const mockInsights: Insight[] = [
   {
     id: '1',
@@ -58,7 +58,7 @@ const mockInsights: Insight[] = [
   },
   {
     id: '4',
-    type: 'team_analysis',
+    type: 'weekly_report',
     title: 'Weekend Work Pattern',
     summary:
       'Three team members have been consistently working on weekends. Consider workload balancing to prevent burnout.',
@@ -73,16 +73,15 @@ function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const hours = Math.floor(diff / 3600000);
   if (hours < 1) return 'just now';
-  if (hours < 24) return `${hours} hours ago`;
+  if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
-  return `${days} day${days > 1 ? 's' : ''} ago`;
+  return `${days}d ago`;
 }
 
 export default function InsightsPage() {
   const orgId = 'demo-org';
   const queryClient = useQueryClient();
-  const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState<string | null>(null);
+  const [weeklyReport, setWeeklyReport] = useState<string | null>(null);
 
   const { data: insightsData } = useQuery({
     queryKey: ['insights', orgId],
@@ -94,11 +93,6 @@ export default function InsightsPage() {
     queryKey: ['suggestions', orgId],
     queryFn: () => insightsAPI.getSuggestions(orgId),
     retry: false,
-  });
-
-  const queryMutation = useMutation({
-    mutationFn: (q: string) => insightsAPI.query(q),
-    onSuccess: (data) => setAnswer(data.answer),
   });
 
   const generateMutation = useMutation({
@@ -119,6 +113,26 @@ export default function InsightsPage() {
     },
   });
 
+  const reportMutation = useMutation({
+    mutationFn: () =>
+      insightsAPI.weeklyReport(orgId, {
+        team_size: 12,
+        active_developers: 8,
+        start_date: new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0],
+        end_date: new Date().toISOString().split('T')[0],
+        commits: { total: 245, additions: 12000, deletions: 3400, avg_per_developer: 31 },
+        pull_requests: { total: 32, merged: 28, merge_rate: 87, avg_cycle_time_hours: 18 },
+        reviews: { total: 45, avg_review_time_hours: 4.5 },
+        top_contributors: [
+          { github_login: 'alice', commits: 42, additions: 3200 },
+          { github_login: 'bob', commits: 38, additions: 2800 },
+        ],
+      }),
+    onSuccess: (data) => {
+      setWeeklyReport(data.report);
+    },
+  });
+
   const insights = insightsData?.insights || mockInsights;
   const suggestions = suggestionsData?.suggestions || [];
 
@@ -134,14 +148,14 @@ export default function InsightsPage() {
         <div>
           <h1 className="text-3xl font-bold">AI Insights</h1>
           <p className="text-gray-600 mt-2">
-            AI-powered recommendations to improve your team&apos;s productivity
+            AI-powered recommendations and interactive analysis
           </p>
         </div>
         <Button
           onClick={() => generateMutation.mutate()}
           disabled={generateMutation.isPending}
         >
-          {generateMutation.isPending ? 'Generating...' : 'Generate New Insights'}
+          {generateMutation.isPending ? 'Generating...' : 'Generate Insights'}
         </Button>
       </div>
 
@@ -155,149 +169,181 @@ export default function InsightsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-orange-600">
-              {warningCount}
-            </div>
+            <div className="text-2xl font-bold text-orange-600">{warningCount}</div>
             <p className="text-sm text-gray-500">Needs Attention</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-600">
-              {positiveCount}
-            </div>
+            <div className="text-2xl font-bold text-green-600">{positiveCount}</div>
             <p className="text-sm text-gray-500">Positive Trends</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Ask AI */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Ask AI about your metrics</CardTitle>
-          <CardDescription>
-            Ask any question about your team&apos;s performance
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex space-x-3">
-            <Textarea
-              placeholder="e.g. Which developer has the highest PR merge rate this month?"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              className="flex-1"
-              rows={2}
-            />
-            <Button
-              onClick={() => {
-                if (question.trim()) {
-                  queryMutation.mutate(question);
-                }
-              }}
-              disabled={queryMutation.isPending || !question.trim()}
-              className="self-end"
-            >
-              {queryMutation.isPending ? 'Thinking...' : 'Ask'}
-            </Button>
-          </div>
-          {answer && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm font-medium text-blue-800 mb-1">AI Answer:</p>
-              <p className="text-sm text-blue-700 whitespace-pre-wrap">{answer}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="insights">
+        <TabsList>
+          <TabsTrigger value="insights">Insights</TabsTrigger>
+          <TabsTrigger value="chat">Ask AI</TabsTrigger>
+          <TabsTrigger value="report">Weekly Report</TabsTrigger>
+          <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
+        </TabsList>
 
-      {/* Insights List */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Recent Insights</h2>
-        {insights.map((insight) => (
-          <Card
-            key={insight.id}
-            className={!insight.is_read ? 'border-l-4 border-l-blue-500' : ''}
-          >
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <CardTitle className="text-lg">{insight.title}</CardTitle>
-                  <CardDescription>
-                    {timeAgo(insight.generated_at)}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {insight.severity && (
-                    <Badge
-                      variant={
-                        (severityVariant[insight.severity] || 'secondary') as 'default'
-                      }
-                    >
-                      {insight.severity}
-                    </Badge>
-                  )}
-                  {insight.category && (
-                    <Badge variant="outline">{insight.category}</Badge>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">{insight.summary}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Suggestions */}
-      {suggestions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>AI Suggestions</CardTitle>
-            <CardDescription>
-              Actionable recommendations for your team
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {suggestions.map((s, i) => (
-                <div key={i} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold">{s.title}</h3>
-                    <Badge
-                      variant={
-                        s.priority === 'high'
-                          ? 'destructive'
-                          : s.priority === 'medium'
-                            ? 'warning'
-                            : ('secondary' as 'default')
-                      }
-                    >
-                      {s.priority}
-                    </Badge>
+        {/* Insights Tab */}
+        <TabsContent value="insights">
+          <div className="space-y-4 mt-4">
+            {insights.map((insight) => (
+              <Card
+                key={insight.id}
+                className={!insight.is_read ? 'border-l-4 border-l-blue-500' : ''}
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="text-lg">{insight.title}</CardTitle>
+                      <CardDescription>{timeAgo(insight.generated_at)}</CardDescription>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {insight.severity && (
+                        <Badge
+                          variant={
+                            (severityVariant[insight.severity] || 'secondary') as 'default'
+                          }
+                        >
+                          {insight.severity}
+                        </Badge>
+                      )}
+                      {insight.category && (
+                        <Badge variant="outline">{insight.category}</Badge>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600">{s.description}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">{insight.summary}</p>
+                </CardContent>
+              </Card>
+            ))}
 
-      {/* About */}
-      <Card>
-        <CardHeader>
-          <CardTitle>About AI Insights</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-600 text-sm">
-            Insights are generated by analyzing your team&apos;s development
-            patterns using GPT-4. They are refreshed daily and take into account
-            commit frequency, PR cycle times, code review patterns, and team
-            workload distribution. Connect your repositories in Settings to
-            enable real-time insights.
-          </p>
-        </CardContent>
-      </Card>
+            {insights.length === 0 && (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-gray-500">
+                    No insights yet. Click &quot;Generate Insights&quot; to get
+                    AI-powered analysis of your team.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Chat Tab */}
+        <TabsContent value="chat">
+          <div className="mt-4">
+            <AIChat />
+          </div>
+        </TabsContent>
+
+        {/* Weekly Report Tab */}
+        <TabsContent value="report">
+          <div className="mt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                Generate a comprehensive weekly performance report for your team.
+              </p>
+              <Button
+                onClick={() => reportMutation.mutate()}
+                disabled={reportMutation.isPending}
+                variant="outline"
+              >
+                {reportMutation.isPending ? 'Generating...' : 'Generate Report'}
+              </Button>
+            </div>
+
+            {weeklyReport ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Weekly Team Report</CardTitle>
+                  <CardDescription>
+                    Generated {new Date().toLocaleDateString()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="prose prose-sm max-w-none whitespace-pre-wrap text-gray-700">
+                    {weeklyReport}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="48"
+                    height="48"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="mx-auto mb-3 text-gray-400"
+                  >
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                  </svg>
+                  <p className="text-gray-500">
+                    Click &quot;Generate Report&quot; to create a weekly summary.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Suggestions Tab */}
+        <TabsContent value="suggestions">
+          <div className="mt-4 space-y-4">
+            {suggestions.length > 0 ? (
+              suggestions.map((s, i) => (
+                <Card key={i}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h3 className="font-semibold">{s.title}</h3>
+                        <p className="text-sm text-gray-600">{s.description}</p>
+                      </div>
+                      <Badge
+                        variant={
+                          (s.priority === 'high'
+                            ? 'destructive'
+                            : s.priority === 'medium'
+                              ? 'warning'
+                              : 'secondary') as 'default'
+                        }
+                      >
+                        {s.priority}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-gray-500">
+                    Generate insights first to get AI-powered suggestions.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
