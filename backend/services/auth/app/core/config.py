@@ -32,6 +32,16 @@ class Settings(BaseSettings):
     GITHUB_AUTH_URL: str = "https://github.com/login/oauth/authorize"
     GITHUB_TOKEN_URL: str = "https://github.com/login/oauth/access_token"
 
+    # Slack OAuth
+    SLACK_CLIENT_ID: str = ""
+    SLACK_CLIENT_SECRET: str = ""
+    SLACK_REDIRECT_URI: str = "http://localhost:3000/integrations/slack/callback"
+
+    # Jira OAuth
+    JIRA_CLIENT_ID: str = ""
+    JIRA_CLIENT_SECRET: str = ""
+    JIRA_REDIRECT_URI: str = "http://localhost:3000/integrations/jira/callback"
+
     # Email
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
