@@ -27,15 +27,13 @@ from pathlib import Path
 # Add auth service to path so we can reuse its models/db
 sys.path.insert(0, str(Path(__file__).parent.parent / "services" / "auth"))
 
+import bcrypt
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from passlib.context import CryptContext
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql+asyncpg://devmetrics:devmetrics123@localhost:5432/devmetrics",
 )
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # ---------------------------------------------------------------------------
 # Demo data constants
@@ -109,7 +107,7 @@ DEMO_REPOS = [
 
 
 def _hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
 def _random_date(days_back: int = 90) -> datetime:
@@ -132,9 +130,9 @@ async def seed(db: AsyncSession):
     for user in DEMO_USERS:
         await db.execute(text("""
             INSERT INTO users (id, email, full_name, hashed_password, github_login,
-                               is_active, is_email_verified, created_at, updated_at)
+                               is_active, is_email_verified, is_superuser, created_at, updated_at)
             VALUES (:id, :email, :full_name, :hashed_password, :github_login,
-                    true, true, NOW(), NOW())
+                    true, true, false, NOW(), NOW())
             ON CONFLICT (id) DO NOTHING
         """), {
             "id": user["id"],
@@ -147,8 +145,8 @@ async def seed(db: AsyncSession):
     print("[seed] Creating organization members...")
     for user in DEMO_USERS:
         await db.execute(text("""
-            INSERT INTO organization_members (id, organization_id, user_id, role, created_at, updated_at)
-            VALUES (:id, :org_id, :user_id, :role, NOW(), NOW())
+            INSERT INTO organization_members (id, organization_id, user_id, role, joined_at)
+            VALUES (:id, :org_id, :user_id, :role, NOW())
             ON CONFLICT DO NOTHING
         """), {
             "id": str(uuid.uuid4()),
@@ -177,14 +175,15 @@ async def seed(db: AsyncSession):
         dev_id = str(uuid.uuid4())
         developer_ids[user["github_login"]] = dev_id
         await db.execute(text("""
-            INSERT INTO developers (id, organization_id, github_login, display_name, created_at, updated_at)
-            VALUES (:id, :org_id, :github_login, :display_name, NOW(), NOW())
-            ON CONFLICT DO NOTHING
+            INSERT INTO developers (id, organization_id, github_id, github_login, name, created_at, updated_at)
+            VALUES (:id, :org_id, :github_id, :github_login, :name, NOW(), NOW())
+            ON CONFLICT (organization_id, github_id) DO NOTHING
         """), {
             "id": dev_id,
             "org_id": DEMO_ORG_ID,
+            "github_id": abs(hash(user["github_login"])) % 1000000,
             "github_login": user["github_login"],
-            "display_name": user["full_name"],
+            "name": user["full_name"],
         })
 
     print("[seed] Generating synthetic commits (90 days)...")
@@ -248,16 +247,17 @@ async def seed(db: AsyncSession):
         merged_at = (created_at + timedelta(hours=cycle_hours)) if state == "merged" and cycle_hours else None
 
         await db.execute(text("""
-            INSERT INTO pull_requests (id, repository_id, developer_id, github_pr_number,
+            INSERT INTO pull_requests (id, repository_id, developer_id, github_pr_id, number,
                                        title, state, additions, deletions,
                                        cycle_time_hours, merged_at, created_at, updated_at)
-            VALUES (:id, :repo_id, :dev_id, :pr_number, :title, :state,
+            VALUES (:id, :repo_id, :dev_id, :github_pr_id, :pr_number, :title, :state,
                     :additions, :deletions, :cycle_hours, :merged_at, :created_at, NOW())
-            ON CONFLICT DO NOTHING
+            ON CONFLICT (repository_id, github_pr_id) DO NOTHING
         """), {
             "id": str(uuid.uuid4()),
             "repo_id": repo["id"],
             "dev_id": developer_ids[dev_login],
+            "github_pr_id": i + 1,
             "pr_number": i + 1,
             "title": random.choice(pr_titles),
             "state": state,
