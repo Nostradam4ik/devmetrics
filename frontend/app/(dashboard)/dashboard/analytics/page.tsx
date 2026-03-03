@@ -15,6 +15,8 @@ import CommitChart from '@/components/charts/CommitChart';
 import PRCycleTimeChart from '@/components/charts/PRCycleTimeChart';
 import TeamActivityChart from '@/components/charts/TeamActivityChart';
 import { metricsAPI } from '@/lib/api/metrics';
+import { exportsAPI } from '@/lib/api/exports';
+import { useToast } from '@/components/ui/toast';
 
 const dateRanges = [
   { label: '7 days', days: 7 },
@@ -44,6 +46,8 @@ const mockContributors = [
 
 export default function AnalyticsPage() {
   const [selectedRange, setSelectedRange] = useState(14);
+  const [isExporting, setIsExporting] = useState(false);
+  const { showToast } = useToast();
   const orgId = 'demo-org';
 
   const startDate = new Date();
@@ -69,6 +73,30 @@ export default function AnalyticsPage() {
     retry: false,
   });
 
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    try {
+      await exportsAPI.downloadTeamPDF(orgId, startStr, endStr, 'Team Performance Report');
+      showToast({ type: 'success', title: 'PDF downloaded', message: 'Your report is ready.' });
+    } catch {
+      showToast({ type: 'error', title: 'Export failed', message: 'Backend unavailable.' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      await exportsAPI.downloadTeamCSV(orgId, startStr, endStr);
+      showToast({ type: 'success', title: 'CSV downloaded', message: 'Your data export is ready.' });
+    } catch {
+      showToast({ type: 'error', title: 'Export failed', message: 'Backend unavailable.' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const commitData = commitSeries?.data || generateMockTimeSeries(selectedRange);
   const cycleData = cycleSeries?.data || generateMockTimeSeries(selectedRange, 2, 24);
   const contributors = teamMetrics?.top_contributors || mockContributors;
@@ -90,8 +118,44 @@ export default function AnalyticsPage() {
           </p>
         </div>
 
-        {/* Date Range Selector */}
-        <div className="flex items-center space-x-2">
+        {/* Controls: Date Range + Export */}
+        <div className="flex items-center gap-3">
+          {/* Export buttons */}
+          <div className="flex items-center gap-1.5">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleExportPDF}
+              disabled={isExporting}
+              className="gap-1.5"
+            >
+              {isExporting ? (
+                <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+              ) : (
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              )}
+              PDF
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleExportCSV}
+              disabled={isExporting}
+              className="gap-1.5"
+            >
+              <svg className="h-3.5 w-3.5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+              </svg>
+              CSV
+            </Button>
+          </div>
+
+          {/* Date Range Selector */}
+          <div className="flex items-center space-x-2">
           {dateRanges.map((range) => (
             <Button
               key={range.days}
@@ -102,6 +166,7 @@ export default function AnalyticsPage() {
               {range.label}
             </Button>
           ))}
+          </div>
         </div>
       </div>
 

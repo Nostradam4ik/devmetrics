@@ -16,6 +16,16 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: List[str] = ["http://localhost:3000"]
 
+    # SMTP (for scheduled email reports)
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_TLS: bool = False
+    SMTP_STARTTLS: bool = True
+    FROM_EMAIL: str = "noreply@devmetrics.io"
+    FROM_NAME: str = "DevMetrics"
+
     class Config:
         env_file = ".env"
         case_sensitive = True
