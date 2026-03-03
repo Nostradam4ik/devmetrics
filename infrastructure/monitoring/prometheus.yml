@@ -1,0 +1,88 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: 'production'
+    project: 'devmetrics'
+
+# Alerting rules
+rule_files:
+  - "alerts.yml"
+
+# Alertmanager (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node exporter — host metrics (CPU, memory, disk, network)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node_exporter:9100']
+
+  # PostgreSQL metrics via postgres_exporter
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres_exporter:9187']
+
+  # Redis metrics via redis_exporter
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis_exporter:9121']
+
+  # Nginx metrics via nginx-prometheus-exporter
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx_exporter:9113']
+
+  # Auth Service (FastAPI — add prometheus-fastapi-instrumentator)
+  - job_name: 'auth_service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['auth_service:8000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'auth'
+
+  # Ingestion Service
+  - job_name: 'ingestion_service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['ingestion_service:8000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'ingestion'
+
+  # Analytics Service
+  - job_name: 'analytics_service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['analytics_service:8000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'analytics'
+
+  # AI Service
+  - job_name: 'ai_service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['ai_service:8000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'ai'
+
+  # Celery workers via Flower (flower exposes /metrics with prometheus_client)
+  - job_name: 'celery'
+    static_configs:
+      - targets: ['flower:5555']
+    metrics_path: '/metrics'

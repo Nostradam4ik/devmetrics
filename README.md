@@ -10,12 +10,14 @@
 
 ## Features
 
-- **Secure Authentication** - JWT + GitHub OAuth
-- **Real-time Metrics** - Commits, PRs, code reviews tracking
-- **AI Insights** - GPT-4 powered recommendations
-- **Team Dashboard** - Beautiful analytics interface
-- **Auto Sync** - Automatic GitHub data collection with Celery
-- **Modern UI** - Next.js 15 + Tailwind CSS + shadcn/ui
+- **Secure Authentication** — JWT + GitHub OAuth
+- **Real-time Metrics** — Commits, PRs, code reviews, cycle time
+- **ML Analytics** — Velocity trends, anomaly detection, sprint prediction, team health scoring
+- **AI Insights** — GPT-4 powered recommendations & weekly reports
+- **Integrations** — Slack notifications, Jira project tracking
+- **Export** — PDF/CSV reports, email delivery
+- **Real-time** — WebSocket notifications, live sync status
+- **Modern UI** — Next.js 15 + Tailwind CSS + shadcn/ui
 
 ## Architecture
 
@@ -31,10 +33,12 @@ DevMetrics (Microservices)
 │
 ├── Analytics Service (Port 8003)
 │   ├── Metrics calculator
+│   ├── ML analytics (velocity, anomalies, health, sprint prediction)
+│   ├── PDF/CSV/email exports
 │   └── Redis caching
 │
 ├── AI Service (Port 8004)
-│   └── OpenAI GPT-4 insights
+│   └── OpenAI GPT-4 insights + weekly reports
 │
 └── Frontend (Port 3000)
     └── Next.js 15 React app
@@ -59,9 +63,15 @@ DevMetrics (Microservices)
 - shadcn/ui (components)
 
 **Infrastructure:**
-- Docker & Docker Compose
-- Nginx (reverse proxy)
-- GitHub Actions (CI/CD)
+- Docker & Docker Compose (dev + production)
+- Nginx (reverse proxy + rate limiting + SSL)
+- GitHub Actions (CI/CD with automated deploy)
+- Prometheus + Grafana (monitoring)
+- Locust (load testing)
+
+**Testing:**
+- pytest + pytest-asyncio (backend — 80+ tests)
+- Vitest + Testing Library (frontend — 45+ tests)
 
 ## Quick Start
 
@@ -142,6 +152,33 @@ devmetrics/
 └── .github/workflows/     # CI/CD pipelines
 ```
 
+## Testing
+
+```bash
+# Backend — all services
+cd backend/services/auth && pytest tests/ -v
+cd backend/services/analytics && pytest tests/ -v
+cd backend/services/ingestion && pytest tests/ -v
+cd backend/services/ai && pytest tests/ -v
+
+# Frontend
+cd frontend && npm test
+
+# Load testing (requires Locust)
+pip install locust
+locust -f infrastructure/load-tests/locustfile.py --host http://localhost -u 20 -r 2 --run-time 60s --headless
+```
+
+## Production Deployment
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full production guide including:
+- Server setup, SSL certificates
+- Environment variables
+- Docker Compose production deployment
+- CI/CD pipeline configuration
+- Monitoring with Prometheus + Grafana
+- Demo seed account
+
 ## License
 
-MIT License - Copyright (c) 2026 Andrii Zhmuryk
+MIT License — Copyright (c) 2026 Andrii Zhmuryk

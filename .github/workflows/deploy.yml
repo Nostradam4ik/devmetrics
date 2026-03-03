@@ -1,0 +1,207 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+    # Only deploy when functional code changes — not docs/tests alone
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'infrastructure/load-tests/**'
+
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to deploy (all | auth | ingestion | analytics | ai | frontend)'
+        required: false
+        default: 'all'
+      environment:
+        description: 'Target environment'
+        required: false
+        default: 'production'
+        type: choice
+        options: [production, staging]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/devmetrics
+
+jobs:
+  # ── 1. Run all tests before deploying ─────────────────────────────────────
+  test:
+    name: Pre-deploy Tests
+    uses: ./.github/workflows/backend-ci.yml
+
+  test-frontend:
+    name: Pre-deploy Frontend Tests
+    uses: ./.github/workflows/frontend-ci.yml
+
+  # ── 2. Build & push Docker images ─────────────────────────────────────────
+  build-images:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    needs: [test, test-frontend]
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: auth
+            context: ./backend/services/auth
+          - name: ingestion
+            context: ./backend/services/ingestion
+          - name: analytics
+            context: ./backend/services/analytics
+          - name: ai
+            context: ./backend/services/ai
+          - name: frontend
+            context: ./frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service.name }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push ${{ matrix.service.name }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.service.context }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
+
+  # ── 3. Deploy to server via SSH ────────────────────────────────────────────
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment || 'production' }}
+    runs-on: ubuntu-latest
+    needs: build-images
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+      url: ${{ vars.APP_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: tag
+        run: echo "TAG=sha-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script: |
+            set -e
+            cd ${{ secrets.DEPLOY_PATH || '/opt/devmetrics' }}
+
+            # Pull latest compose files
+            git pull origin main
+
+            # Login to registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | \
+              docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Export image tag for compose
+            export IMAGE_TAG=${{ steps.tag.outputs.TAG }}
+            export IMAGE_PREFIX=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}
+
+            # Pull new images
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+
+            # Run DB migrations before starting new containers
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              run --rm auth_service alembic upgrade head
+
+            # Rolling restart — zero downtime
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              up -d --no-deps --build \
+              auth_service ingestion_service analytics_service ai_service \
+              celery_worker celery_beat frontend
+
+            # Reload nginx (config may have changed)
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              exec -T nginx nginx -s reload || true
+
+            # Health checks
+            sleep 10
+            curl -fsS http://localhost:8001/health > /dev/null && echo "auth: OK"
+            curl -fsS http://localhost:8002/health > /dev/null && echo "ingestion: OK"
+            curl -fsS http://localhost:8003/health > /dev/null && echo "analytics: OK"
+            curl -fsS http://localhost:8004/health > /dev/null && echo "ai: OK"
+
+            # Clean up old images
+            docker image prune -f
+
+      - name: Notify Slack on success
+        if: success() && env.SLACK_WEBHOOK != ''
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_DEPLOY_WEBHOOK }}
+        run: |
+          curl -X POST "$SLACK_WEBHOOK" \
+            -H 'Content-type: application/json' \
+            -d "{\"text\":\"✅ DevMetrics deployed to production — \`$(git rev-parse --short HEAD)\` by \`${{ github.actor }}\`\"}"
+
+      - name: Notify Slack on failure
+        if: failure() && env.SLACK_WEBHOOK != ''
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_DEPLOY_WEBHOOK }}
+        run: |
+          curl -X POST "$SLACK_WEBHOOK" \
+            -H 'Content-type: application/json' \
+            -d "{\"text\":\"❌ DevMetrics deploy FAILED — \`$(git rev-parse --short HEAD)\` — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View logs>\"}"
+
+  # ── 4. Post-deploy smoke tests ─────────────────────────────────────────────
+  smoke-test:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: success()
+
+    steps:
+      - name: Health checks against production
+        env:
+          APP_URL: ${{ vars.APP_URL || 'https://app.devmetrics.io' }}
+        run: |
+          check() {
+            local url="$1"
+            local name="$2"
+            local status=$(curl -o /dev/null -s -w "%{http_code}" "$url")
+            if [ "$status" = "200" ]; then
+              echo "✅ $name → $status"
+            else
+              echo "❌ $name → $status"
+              exit 1
+            fi
+          }
+          check "$APP_URL/auth/health"      "Auth Service"
+          check "$APP_URL/ingestion/health" "Ingestion Service"
+          check "$APP_URL/analytics/health" "Analytics Service"
+          check "$APP_URL/ai/health"        "AI Service"
+          check "$APP_URL/"                 "Frontend"
+          echo "All smoke tests passed."
