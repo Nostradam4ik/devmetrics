@@ -1,6 +1,13 @@
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, RateLimitError, APIStatusError
 from typing import Dict, List, Optional
+import asyncio
+import logging
 import os
+
+logger = logging.getLogger(__name__)
+
+_RETRY_ATTEMPTS = 3
+_RETRY_BASE_DELAY = 1.0  # seconds, doubles each attempt
 
 
 class GroqService:
@@ -27,7 +34,7 @@ class GroqService:
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
     ) -> str:
-        """Generate text completion from Groq Llama."""
+        """Generate text completion from Groq Llama with exponential backoff retry."""
         messages = []
 
         if system_prompt:
@@ -35,14 +42,38 @@ class GroqService:
 
         messages.append({"role": "user", "content": prompt})
 
-        response = await self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            max_tokens=max_tokens or self.max_tokens,
-            temperature=temperature or self.temperature,
-        )
+        last_exc: Exception = RuntimeError("No attempts made")
+        for attempt in range(_RETRY_ATTEMPTS):
+            try:
+                response = await self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    max_tokens=max_tokens or self.max_tokens,
+                    temperature=temperature or self.temperature,
+                )
+                return response.choices[0].message.content
+            except RateLimitError as exc:
+                last_exc = exc
+                wait = _RETRY_BASE_DELAY * (2 ** attempt)
+                logger.warning(
+                    "Groq rate limit hit (attempt %d/%d), retrying in %.1fs",
+                    attempt + 1, _RETRY_ATTEMPTS, wait,
+                )
+                await asyncio.sleep(wait)
+            except APIStatusError as exc:
+                # Retry on 5xx server errors only
+                if exc.status_code >= 500:
+                    last_exc = exc
+                    wait = _RETRY_BASE_DELAY * (2 ** attempt)
+                    logger.warning(
+                        "Groq server error %d (attempt %d/%d), retrying in %.1fs",
+                        exc.status_code, attempt + 1, _RETRY_ATTEMPTS, wait,
+                    )
+                    await asyncio.sleep(wait)
+                else:
+                    raise
 
-        return response.choices[0].message.content
+        raise last_exc
 
     async def generate_insights(self, metrics_data: Dict) -> Dict:
         """Generate AI insights from metrics data."""

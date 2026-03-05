@@ -21,7 +21,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # CORS
+    # CORS — override via env var (JSON array or comma-separated)
+    # e.g. CORS_ORIGINS='["https://app.devmetrics.io"]'
     CORS_ORIGINS: List[str] = ["http://localhost:3000"]
 
     # GitHub OAuth

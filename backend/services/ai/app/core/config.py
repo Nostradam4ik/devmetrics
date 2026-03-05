@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     GROQ_MAX_TOKENS: int = 1500
     GROQ_TEMPERATURE: float = 0.7
 
+    # CORS — override via env var (JSON array or comma-separated)
+    # e.g. CORS_ORIGINS='["https://app.devmetrics.io"]'
     CORS_ORIGINS: List[str] = ["http://localhost:3000"]
 
     class Config:

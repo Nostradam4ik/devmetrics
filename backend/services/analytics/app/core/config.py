@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     CACHE_TTL_SECONDS: int = 300
     ENABLE_CACHE: bool = True
 
+    # CORS — override via env var (JSON array or comma-separated)
+    # e.g. CORS_ORIGINS='["https://app.devmetrics.io"]'
     CORS_ORIGINS: List[str] = ["http://localhost:3000"]
 
     # SMTP (for scheduled email reports)
