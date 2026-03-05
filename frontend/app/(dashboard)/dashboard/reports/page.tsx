@@ -129,7 +129,7 @@ function TemplateCard({
 // ---------------------------------------------------------------------------
 
 function CustomReportBuilder() {
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const [selectedDays, setSelectedDays] = useState(30);
   const [reportTitle, setReportTitle] = useState('Custom Team Report');
   const [format, setFormat] = useState<'pdf' | 'csv'>('pdf');
@@ -141,13 +141,13 @@ function CustomReportBuilder() {
     try {
       if (format === 'pdf') {
         await exportsAPI.downloadTeamPDF(ORG_ID, start, end, reportTitle);
-        showToast({ type: 'success', title: 'PDF downloaded', message: 'Your report is ready.' });
+        toast('success', 'PDF downloaded', 'Your report is ready.');
       } else {
         await exportsAPI.downloadTeamCSV(ORG_ID, start, end);
-        showToast({ type: 'success', title: 'CSV downloaded', message: 'Your data export is ready.' });
+        toast('success', 'CSV downloaded', 'Your data export is ready.');
       }
     } catch {
-      showToast({ type: 'error', title: 'Export failed', message: 'Could not generate the report. Backend may be unavailable.' });
+      toast('error', 'Export failed', 'Could not generate the report. Backend may be unavailable.');
     } finally {
       setIsExporting(false);
     }
@@ -238,7 +238,7 @@ function CustomReportBuilder() {
 // ---------------------------------------------------------------------------
 
 function EmailReportSender() {
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const [emails, setEmails] = useState('');
   const [selectedDays, setSelectedDays] = useState(7);
   const [title, setTitle] = useState('Weekly Team Report');
@@ -252,11 +252,11 @@ function EmailReportSender() {
         days: selectedDays,
       }),
     onSuccess: (data) => {
-      showToast({ type: 'success', title: 'Report sent!', message: data.message });
+      toast('success', 'Report sent!', data.message);
       setEmails('');
     },
     onError: () => {
-      showToast({ type: 'error', title: 'Failed to send', message: 'Check SMTP settings in the backend.' });
+      toast('error', 'Failed to send', 'Check SMTP settings in the backend.');
     },
   });
 
@@ -336,7 +336,7 @@ const MOCK_TEMPLATES: ReportTemplate[] = [
 ];
 
 export default function ReportsPage() {
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const [exportingId, setExportingId] = useState<string | null>(null);
 
   const { data } = useQuery({
@@ -356,13 +356,13 @@ export default function ReportsPage() {
     try {
       if (isCsv) {
         await exportsAPI.downloadTeamCSV(ORG_ID, start, end);
-        showToast({ type: 'success', title: 'CSV downloaded', message: `${template.name} exported.` });
+        toast('success', 'CSV downloaded', `${template.name} exported.`);
       } else {
         await exportsAPI.downloadTeamPDF(ORG_ID, start, end, template.name);
-        showToast({ type: 'success', title: 'PDF downloaded', message: `${template.name} exported.` });
+        toast('success', 'PDF downloaded', `${template.name} exported.`);
       }
     } catch {
-      showToast({ type: 'error', title: 'Export failed', message: 'Backend may be unavailable — try again later.' });
+      toast('error', 'Export failed', 'Backend may be unavailable — try again later.');
     } finally {
       setExportingId(null);
     }
@@ -419,9 +419,9 @@ export default function ReportsPage() {
                         const { start, end } = getDateRange(30);
                         try {
                           await exportsAPI.downloadTimeseriesCSV(ORG_ID, metric, start, end);
-                          showToast({ type: 'success', title: 'CSV downloaded', message: `${labels[metric]} exported.` });
+                          toast('success', 'CSV downloaded', `${labels[metric]} exported.`);
                         } catch {
-                          showToast({ type: 'error', title: 'Export failed', message: 'Backend unavailable.' });
+                          toast('error', 'Export failed', 'Backend unavailable.');
                         }
                       }}
                       className="flex items-center gap-2"

@@ -47,7 +47,7 @@ const mockContributors = [
 export default function AnalyticsPage() {
   const [selectedRange, setSelectedRange] = useState(14);
   const [isExporting, setIsExporting] = useState(false);
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const orgId = 'demo-org';
 
   const startDate = new Date();
@@ -77,9 +77,9 @@ export default function AnalyticsPage() {
     setIsExporting(true);
     try {
       await exportsAPI.downloadTeamPDF(orgId, startStr, endStr, 'Team Performance Report');
-      showToast({ type: 'success', title: 'PDF downloaded', message: 'Your report is ready.' });
+      toast('success', 'PDF downloaded', 'Your report is ready.');
     } catch {
-      showToast({ type: 'error', title: 'Export failed', message: 'Backend unavailable.' });
+      toast('error', 'Export failed', 'Backend unavailable.');
     } finally {
       setIsExporting(false);
     }
@@ -89,9 +89,9 @@ export default function AnalyticsPage() {
     setIsExporting(true);
     try {
       await exportsAPI.downloadTeamCSV(orgId, startStr, endStr);
-      showToast({ type: 'success', title: 'CSV downloaded', message: 'Your data export is ready.' });
+      toast('success', 'CSV downloaded', 'Your data export is ready.');
     } catch {
-      showToast({ type: 'error', title: 'Export failed', message: 'Backend unavailable.' });
+      toast('error', 'Export failed', 'Backend unavailable.');
     } finally {
       setIsExporting(false);
     }

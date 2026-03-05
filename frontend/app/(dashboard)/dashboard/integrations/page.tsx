@@ -74,7 +74,7 @@ function SlackPanel({
   integration: Integration | undefined;
   orgId: string;
 }) {
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [notifConfig, setNotifConfig] = useState(
     integration?.notification_config ?? {
@@ -92,27 +92,27 @@ function SlackPanel({
       const { url } = await integrationsAPI.getSlackOAuthUrl(orgId);
       window.location.href = url;
     },
-    onError: () => showToast({ type: 'error', title: 'Cannot connect Slack', message: 'SLACK_CLIENT_ID not configured in backend.' }),
+    onError: () => toast('error', 'Cannot connect Slack', 'SLACK_CLIENT_ID not configured in backend.'),
   });
 
   const testMutation = useMutation({
     mutationFn: () => integrationsAPI.testSlack(orgId),
-    onSuccess: () => showToast({ type: 'success', title: 'Test sent!', message: 'Check your Slack channel.' }),
-    onError: () => showToast({ type: 'error', title: 'Test failed', message: 'Could not deliver message.' }),
+    onSuccess: () => toast('success', 'Test sent!', 'Check your Slack channel.'),
+    onError: () => toast('error', 'Test failed', 'Could not deliver message.'),
   });
 
   const disconnectMutation = useMutation({
     mutationFn: () => integrationsAPI.disconnect(orgId, 'slack'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['integrations'] });
-      showToast({ type: 'success', title: 'Slack disconnected', message: '' });
+      toast('success', 'Slack disconnected', '');
     },
   });
 
   const saveMutation = useMutation({
     mutationFn: () => integrationsAPI.updateSlackNotifications(orgId, notifConfig),
-    onSuccess: () => showToast({ type: 'success', title: 'Settings saved', message: '' }),
-    onError: () => showToast({ type: 'error', title: 'Save failed', message: '' }),
+    onSuccess: () => toast('success', 'Settings saved', ''),
+    onError: () => toast('error', 'Save failed', ''),
   });
 
   const notifLabels: Record<string, string> = {
@@ -243,7 +243,7 @@ function JiraPanel({
   integration: Integration | undefined;
   orgId: string;
 }) {
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedProject, setSelectedProject] = useState<string>('');
 
@@ -252,14 +252,14 @@ function JiraPanel({
       const { url } = await integrationsAPI.getJiraOAuthUrl(orgId);
       window.location.href = url;
     },
-    onError: () => showToast({ type: 'error', title: 'Cannot connect Jira', message: 'JIRA_CLIENT_ID not configured in backend.' }),
+    onError: () => toast('error', 'Cannot connect Jira', 'JIRA_CLIENT_ID not configured in backend.'),
   });
 
   const disconnectMutation = useMutation({
     mutationFn: () => integrationsAPI.disconnect(orgId, 'jira'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['integrations'] });
-      showToast({ type: 'success', title: 'Jira disconnected', message: '' });
+      toast('success', 'Jira disconnected', '');
     },
   });
 

@@ -98,7 +98,7 @@ async function get<T>(path: string, params: Record<string, string | number>): Pr
   const qs = new URLSearchParams(
     Object.entries(params).map(([k, v]) => [k, String(v)])
   ).toString();
-  const res = await fetch(`${ANALYTICS_BASE}/api/v1${path}?${qs}`, { headers });
+  const res = await fetch(`${ANALYTICS_BASE}/api/v1${path}?${qs}`, { headers: headers as HeadersInit });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail ?? `HTTP ${res.status}`);

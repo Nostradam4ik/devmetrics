@@ -74,13 +74,13 @@ export default function Sidebar() {
 
   return (
     <>
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col">
         <div className="p-6">
           <Link href="/dashboard" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">D</span>
             </div>
-            <span className="text-xl font-bold">DevMetrics</span>
+            <span className="text-xl font-bold text-gray-900 dark:text-slate-100">DevMetrics</span>
           </Link>
         </div>
 
@@ -94,8 +94,8 @@ export default function Sidebar() {
                 className={cn(
                   'flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                    : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800'
                 )}
               >
                 <NavIcon icon={item.icon} />
@@ -105,10 +105,10 @@ export default function Sidebar() {
           })}
         </nav>
 
-        <div className="p-4 border-t border-gray-200 space-y-2">
+        <div className="p-4 border-t border-gray-200 dark:border-slate-700 space-y-2">
           {/* Online presence */}
           {onlineUsers.length > 0 && (
-            <div className="flex items-center justify-between text-xs text-gray-500">
+            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400">
               <span className="flex items-center gap-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
                 {onlineUsers.length} online
@@ -117,7 +117,7 @@ export default function Sidebar() {
             </div>
           )}
           {/* Connection status */}
-          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+          <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-slate-500">
             <span
               className={`h-1.5 w-1.5 rounded-full ${
                 isConnected ? 'bg-green-400' : 'bg-gray-300'
@@ -125,7 +125,7 @@ export default function Sidebar() {
             />
             {isConnected ? 'Live' : 'Offline'}
           </div>
-          <div className="text-xs text-gray-400">2026 DevMetrics</div>
+          <div className="text-xs text-gray-400 dark:text-slate-500">2026 DevMetrics</div>
         </div>
       </div>
       {/* Live sync toast — rendered outside sidebar to avoid overflow clipping */}

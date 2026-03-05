@@ -167,7 +167,7 @@ export default function TeamPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Team</h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 dark:text-slate-400 mt-2">
             Manage and monitor your team members
           </p>
         </div>
@@ -198,25 +198,25 @@ export default function TeamPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">{members.length}</div>
-            <p className="text-sm text-gray-500">Total Members</p>
+            <p className="text-sm text-gray-500 dark:text-slate-400">Total Members</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-green-600">{activeCount}</div>
-            <p className="text-sm text-gray-500">Active</p>
+            <p className="text-sm text-gray-500 dark:text-slate-400">Active</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-blue-600">{totalCommits}</div>
-            <p className="text-sm text-gray-500">Total Commits (7d)</p>
+            <p className="text-sm text-gray-500 dark:text-slate-400">Total Commits (7d)</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-purple-600">{totalPRs}</div>
-            <p className="text-sm text-gray-500">PRs Opened (7d)</p>
+            <p className="text-sm text-gray-500 dark:text-slate-400">PRs Opened (7d)</p>
           </CardContent>
         </Card>
       </div>
@@ -233,21 +233,21 @@ export default function TeamPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Member</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Role</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Commits</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">PRs</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Reviews</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Status</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
+                <tr className="border-b border-gray-200 dark:border-slate-700">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-slate-400">Member</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-slate-400">Role</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500 dark:text-slate-400">Commits</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500 dark:text-slate-400">PRs</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500 dark:text-slate-400">Reviews</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500 dark:text-slate-400">Status</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500 dark:text-slate-400">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {members.map((member) => (
                   <tr
                     key={member.id}
-                    className="border-b border-gray-100 hover:bg-gray-50"
+                    className="border-b border-gray-100 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-700/30"
                   >
                     <td className="py-3 px-4">
                       <div className="flex items-center space-x-3">
@@ -256,7 +256,7 @@ export default function TeamPage() {
                         </div>
                         <div>
                           <p className="text-sm font-medium">{member.user.full_name}</p>
-                          <p className="text-xs text-gray-500">{member.user.email}</p>
+                          <p className="text-xs text-gray-500 dark:text-slate-400">{member.user.email}</p>
                         </div>
                       </div>
                     </td>
@@ -272,7 +272,7 @@ export default function TeamPage() {
                               role: e.target.value,
                             })
                           }
-                          className="text-xs border rounded px-2 py-1 bg-white"
+                          className="text-xs border border-gray-300 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100"
                         >
                           {roles.map((r) => (
                             <option key={r} value={r}>{r}</option>
@@ -293,7 +293,7 @@ export default function TeamPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                           onClick={() => setShowRemoveDialog(member.id)}
                         >
                           Remove
@@ -331,7 +331,7 @@ export default function TeamPage() {
                 id="inviteRole"
                 value={invite.role}
                 onChange={(e) => setInvite((p) => ({ ...p, role: e.target.value }))}
-                className="w-full border rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="admin">Admin — Can manage repos and team</option>
                 <option value="member">Member — Can view all data</option>
@@ -359,7 +359,7 @@ export default function TeamPage() {
           <DialogHeader>
             <DialogTitle>Remove Member</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-gray-600 py-4">
+          <p className="text-sm text-gray-600 dark:text-slate-400 py-4">
             Are you sure you want to remove this member from the team? They will
             lose access to all team data.
           </p>

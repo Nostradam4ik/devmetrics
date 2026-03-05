@@ -36,7 +36,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
@@ -89,7 +89,7 @@ export default function LoginPage() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">
+              <span className="bg-white dark:bg-slate-800 px-2 text-gray-500 dark:text-slate-400">
                 Or continue with
               </span>
             </div>
@@ -105,7 +105,7 @@ export default function LoginPage() {
           </Button>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
-          <div className="text-sm text-center text-gray-500">
+          <div className="text-sm text-center text-gray-500 dark:text-slate-400">
             Don&apos;t have an account?{' '}
             <Link href="/register" className="text-blue-600 hover:underline">
               Sign up

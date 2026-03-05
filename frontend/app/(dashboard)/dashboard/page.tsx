@@ -43,8 +43,8 @@ const statCards = [
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><line x1="1.05" y1="12" x2="7" y2="12"/><line x1="17.01" y1="12" x2="22.96" y2="12"/></svg>
     ),
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
+    color: 'text-blue-600 dark:text-blue-400',
+    bgColor: 'bg-blue-50 dark:bg-blue-900/30',
     format: (v: number) => v.toLocaleString(),
   },
   {
@@ -53,8 +53,8 @@ const statCards = [
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
     ),
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
+    color: 'text-green-600 dark:text-green-400',
+    bgColor: 'bg-green-50 dark:bg-green-900/30',
     format: (v: number) => v.toLocaleString(),
   },
   {
@@ -63,8 +63,8 @@ const statCards = [
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     ),
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
+    color: 'text-purple-600 dark:text-purple-400',
+    bgColor: 'bg-purple-50 dark:bg-purple-900/30',
     format: (v: number) => String(v),
   },
   {
@@ -73,8 +73,8 @@ const statCards = [
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     ),
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50',
+    color: 'text-orange-600 dark:text-orange-400',
+    bgColor: 'bg-orange-50 dark:bg-orange-900/30',
     format: (v: number) => `${v} days`,
   },
 ];
@@ -83,16 +83,16 @@ function TrendIndicator({ change }: { change: number }) {
   const isPositive = change >= 0;
   const color =
     change === 0
-      ? 'text-gray-500'
+      ? 'text-gray-500 dark:text-slate-400'
       : isPositive
-        ? 'text-green-600'
-        : 'text-red-600';
+        ? 'text-green-600 dark:text-green-400'
+        : 'text-red-600 dark:text-red-400';
 
   return (
     <span className={`text-xs font-medium ${color}`}>
       {isPositive ? '+' : ''}
       {change}%{' '}
-      <span className="text-gray-400">vs last week</span>
+      <span className="text-gray-400 dark:text-slate-500">vs last week</span>
     </span>
   );
 }
@@ -128,7 +128,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-gray-600 dark:text-slate-400 mt-2">
           Overview of your team&apos;s productivity metrics
         </p>
       </div>
@@ -140,7 +140,7 @@ export default function DashboardPage() {
           return (
             <Card key={card.key}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
+                <CardTitle className="text-sm font-medium text-gray-600 dark:text-slate-400">
                   {card.name}
                 </CardTitle>
                 <div className={`p-2 rounded-lg ${card.bgColor} ${card.color}`}>
@@ -185,7 +185,7 @@ export default function DashboardPage() {
                 className="flex items-center justify-between"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-6 text-sm text-gray-400 font-medium">
+                  <div className="w-6 text-sm text-gray-400 dark:text-slate-500 font-medium">
                     #{i + 1}
                   </div>
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-xs font-medium text-white">
@@ -195,12 +195,12 @@ export default function DashboardPage() {
                     <p className="text-sm font-medium">
                       {contributor.github_login}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
                       +{contributor.additions.toLocaleString()} / -{contributor.deletions.toLocaleString()} lines
                     </p>
                   </div>
                 </div>
-                <div className="text-sm font-semibold text-blue-600">
+                <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                   {contributor.commits} commits
                 </div>
               </div>

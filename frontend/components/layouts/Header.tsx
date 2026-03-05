@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { NotificationBell } from '@/components/ui/notification-bell';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import Link from 'next/link';
 
 export default function Header() {
@@ -27,12 +28,12 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex-1 flex items-center">
           <div className="relative max-w-md w-full">
             <svg
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-slate-500"
               xmlns="http://www.w3.org/2000/svg"
               width="16"
               height="16"
@@ -49,13 +50,14 @@ export default function Header() {
             <input
               type="search"
               placeholder="Search..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           <NotificationBell />
+          <ThemeToggle />
 
           <DropdownMenu>
             <DropdownMenuTrigger className="relative h-10 w-10 rounded-full">
