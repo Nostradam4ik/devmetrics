@@ -106,16 +106,17 @@ async def get_time_series(
 @router.get("/summary")
 async def get_metrics_summary(
     organization_id: str = Query(...),
+    days: int = Query(7, ge=1, le=365),
     db: AsyncSession = Depends(get_db),
 ):
     """Get a quick summary of key metrics (for dashboard cards)."""
-    cache_key = f"metrics:summary:{organization_id}"
+    cache_key = f"metrics:summary:{organization_id}:days:{days}"
     cached = await cache_service.get(cache_key)
     if cached:
         return cached
 
     end = datetime.utcnow()
-    start = end - timedelta(days=7)
+    start = end - timedelta(days=days)
 
     team_metrics = await MetricsCalculator.get_team_metrics(
         db=db,
@@ -124,9 +125,9 @@ async def get_metrics_summary(
         end_date=end,
     )
 
-    # Previous week for comparison
+    # Previous period for comparison (same duration)
     prev_end = start
-    prev_start = prev_end - timedelta(days=7)
+    prev_start = prev_end - timedelta(days=days)
 
     prev_metrics = await MetricsCalculator.get_team_metrics(
         db=db,

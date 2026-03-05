@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Card,
@@ -78,8 +78,9 @@ export default function AnalyticsPage() {
     try {
       await exportsAPI.downloadTeamPDF(orgId, startStr, endStr, 'Team Performance Report');
       toast('success', 'PDF downloaded', 'Your report is ready.');
-    } catch {
-      toast('error', 'Export failed', 'Backend unavailable.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Backend unavailable.';
+      toast('error', 'Export failed', msg);
     } finally {
       setIsExporting(false);
     }
@@ -90,15 +91,20 @@ export default function AnalyticsPage() {
     try {
       await exportsAPI.downloadTeamCSV(orgId, startStr, endStr);
       toast('success', 'CSV downloaded', 'Your data export is ready.');
-    } catch {
-      toast('error', 'Export failed', 'Backend unavailable.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Backend unavailable.';
+      toast('error', 'Export failed', msg);
     } finally {
       setIsExporting(false);
     }
   };
 
-  const commitData = commitSeries?.data || generateMockTimeSeries(selectedRange);
-  const cycleData = cycleSeries?.data || generateMockTimeSeries(selectedRange, 2, 24);
+  // Memoize fallback data so it doesn't re-randomize on every render
+  const fallbackCommitData = useMemo(() => generateMockTimeSeries(selectedRange), [selectedRange]);
+  const fallbackCycleData = useMemo(() => generateMockTimeSeries(selectedRange, 2, 24), [selectedRange]);
+
+  const commitData = commitSeries?.data || fallbackCommitData;
+  const cycleData = cycleSeries?.data || fallbackCycleData;
   const contributors = teamMetrics?.top_contributors || mockContributors;
 
   const totalCommits = commitData.reduce((s, d) => s + d.value, 0);

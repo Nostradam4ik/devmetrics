@@ -117,9 +117,9 @@ export const metricsAPI = {
     return response.data;
   },
 
-  getSummary: async (organizationId: string) => {
+  getSummary: async (organizationId: string, days: number = 7) => {
     const response = await apiClient.get<MetricsSummary>(
-      `/analytics/api/v1/metrics/summary?organization_id=${organizationId}`
+      `/analytics/api/v1/metrics/summary?organization_id=${organizationId}&days=${days}`
     );
     return response.data;
   },
