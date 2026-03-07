@@ -16,7 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { exportsAPI, ReportTemplate } from '@/lib/api/exports';
 import { useToast } from '@/components/ui/toast';
 
-const ORG_ID = 'demo-org';
+// Real org UUID from the demo seed data
+const ORG_ID = '00000000-1234-1234-1234-000000000001';
 
 const dateRanges = [
   { label: '7 days', days: 7 },

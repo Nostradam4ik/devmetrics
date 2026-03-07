@@ -79,7 +79,7 @@ function timeAgo(dateStr: string) {
 }
 
 export default function InsightsPage() {
-  const orgId = 'demo-org';
+  const orgId = '00000000-1234-1234-1234-000000000001';
   const queryClient = useQueryClient();
   const [weeklyReport, setWeeklyReport] = useState<string | null>(null);
 

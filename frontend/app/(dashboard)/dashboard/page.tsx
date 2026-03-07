@@ -98,8 +98,8 @@ function TrendIndicator({ change }: { change: number }) {
 }
 
 export default function DashboardPage() {
-  // TODO: replace 'demo-org' with real organization ID from auth context
-  const orgId = 'demo-org';
+  // TODO: replace '00000000-1234-1234-1234-000000000001' with real organization ID from auth context
+  const orgId = '00000000-1234-1234-1234-000000000001';
 
   const { data: summary } = useQuery({
     queryKey: ['metrics-summary', orgId],

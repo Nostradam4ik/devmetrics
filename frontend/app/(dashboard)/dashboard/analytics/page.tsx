@@ -44,39 +44,47 @@ const mockContributors = [
   { github_login: 'frank', commits: 18, additions: 900, deletions: 150 },
 ];
 
+// Real org UUID from the demo seed data
+const DEMO_ORG_ID = '00000000-1234-1234-1234-000000000001';
+
 export default function AnalyticsPage() {
   const [selectedRange, setSelectedRange] = useState(14);
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
-  const orgId = 'demo-org';
 
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - selectedRange);
-  const startStr = startDate.toISOString().split('T')[0];
-  const endStr = new Date().toISOString().split('T')[0];
+  // Stable dates keyed on selectedRange — won't re-randomize on every render
+  const { startStr, endStr } = useMemo(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - selectedRange);
+    return {
+      startStr: start.toISOString().split('T')[0],
+      endStr: end.toISOString().split('T')[0],
+    };
+  }, [selectedRange]);
 
   const { data: commitSeries } = useQuery({
-    queryKey: ['timeseries-commits', orgId, selectedRange],
-    queryFn: () => metricsAPI.getTimeSeries(orgId, 'commits', startStr, endStr),
+    queryKey: ['timeseries-commits', DEMO_ORG_ID, selectedRange],
+    queryFn: () => metricsAPI.getTimeSeries(DEMO_ORG_ID, 'commits', startStr, endStr),
     retry: false,
   });
 
   const { data: cycleSeries } = useQuery({
-    queryKey: ['timeseries-cycle', orgId, selectedRange],
-    queryFn: () => metricsAPI.getTimeSeries(orgId, 'cycle_time', startStr, endStr),
+    queryKey: ['timeseries-cycle', DEMO_ORG_ID, selectedRange],
+    queryFn: () => metricsAPI.getTimeSeries(DEMO_ORG_ID, 'cycle_time', startStr, endStr),
     retry: false,
   });
 
   const { data: teamMetrics } = useQuery({
-    queryKey: ['team-metrics-analytics', orgId, selectedRange],
-    queryFn: () => metricsAPI.getTeamMetrics(orgId, startStr, endStr),
+    queryKey: ['team-metrics-analytics', DEMO_ORG_ID, selectedRange],
+    queryFn: () => metricsAPI.getTeamMetrics(DEMO_ORG_ID, startStr, endStr),
     retry: false,
   });
 
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
-      await exportsAPI.downloadTeamPDF(orgId, startStr, endStr, 'Team Performance Report');
+      await exportsAPI.downloadTeamPDF(DEMO_ORG_ID, startStr, endStr, 'Team Performance Report');
       toast('success', 'PDF downloaded', 'Your report is ready.');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Backend unavailable.';
@@ -89,7 +97,7 @@ export default function AnalyticsPage() {
   const handleExportCSV = async () => {
     setIsExporting(true);
     try {
-      await exportsAPI.downloadTeamCSV(orgId, startStr, endStr);
+      await exportsAPI.downloadTeamCSV(DEMO_ORG_ID, startStr, endStr);
       toast('success', 'CSV downloaded', 'Your data export is ready.');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Backend unavailable.';

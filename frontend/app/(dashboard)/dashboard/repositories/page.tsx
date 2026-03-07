@@ -25,7 +25,7 @@ import { repositoriesAPI, type Repository } from '@/lib/api/repositories';
 const mockRepositories: Repository[] = [
   {
     id: '1',
-    organization_id: 'demo-org',
+    organization_id: '00000000-1234-1234-1234-000000000001',
     github_repo_id: 1001,
     full_name: 'devmetrics/frontend-app',
     name: 'frontend-app',
@@ -39,7 +39,7 @@ const mockRepositories: Repository[] = [
   },
   {
     id: '2',
-    organization_id: 'demo-org',
+    organization_id: '00000000-1234-1234-1234-000000000001',
     github_repo_id: 1002,
     full_name: 'devmetrics/api-gateway',
     name: 'api-gateway',
@@ -53,7 +53,7 @@ const mockRepositories: Repository[] = [
   },
   {
     id: '3',
-    organization_id: 'demo-org',
+    organization_id: '00000000-1234-1234-1234-000000000001',
     github_repo_id: 1003,
     full_name: 'devmetrics/auth-service',
     name: 'auth-service',
@@ -79,7 +79,7 @@ function timeSince(dateStr?: string) {
 }
 
 export default function RepositoriesPage() {
-  const orgId = 'demo-org';
+  const orgId = '00000000-1234-1234-1234-000000000001';
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);

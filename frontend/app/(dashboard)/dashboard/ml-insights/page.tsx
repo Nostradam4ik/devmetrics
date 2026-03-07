@@ -30,7 +30,7 @@ import {
 } from 'recharts';
 import { mlAPI, type VelocityTrend, type AnomalyDetection, type TeamHealth, type SprintPrediction } from '@/lib/api/ml';
 
-const ORG_ID = 'demo-org';
+const ORG_ID = '00000000-1234-1234-1234-000000000001';
 
 // ---------------------------------------------------------------------------
 // Sub-components

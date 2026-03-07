@@ -27,7 +27,7 @@ const mockMembers = [
   {
     id: '1',
     user_id: 'u1',
-    organization_id: 'demo-org',
+    organization_id: '00000000-1234-1234-1234-000000000001',
     role: 'owner',
     joined_at: '2024-01-01T00:00:00Z',
     user: {
@@ -44,7 +44,7 @@ const mockMembers = [
   {
     id: '2',
     user_id: 'u2',
-    organization_id: 'demo-org',
+    organization_id: '00000000-1234-1234-1234-000000000001',
     role: 'admin',
     joined_at: '2024-01-15T00:00:00Z',
     user: {
@@ -61,7 +61,7 @@ const mockMembers = [
   {
     id: '3',
     user_id: 'u3',
-    organization_id: 'demo-org',
+    organization_id: '00000000-1234-1234-1234-000000000001',
     role: 'member',
     joined_at: '2024-02-01T00:00:00Z',
     user: {
@@ -78,7 +78,7 @@ const mockMembers = [
   {
     id: '4',
     user_id: 'u4',
-    organization_id: 'demo-org',
+    organization_id: '00000000-1234-1234-1234-000000000001',
     role: 'member',
     joined_at: '2024-02-15T00:00:00Z',
     user: {
@@ -95,7 +95,7 @@ const mockMembers = [
   {
     id: '5',
     user_id: 'u5',
-    organization_id: 'demo-org',
+    organization_id: '00000000-1234-1234-1234-000000000001',
     role: 'viewer',
     joined_at: '2024-03-01T00:00:00Z',
     user: {
@@ -126,7 +126,7 @@ function getInitials(name: string | null, email: string) {
 }
 
 export default function TeamPage() {
-  const orgId = 'demo-org';
+  const orgId = '00000000-1234-1234-1234-000000000001';
   const queryClient = useQueryClient();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showRemoveDialog, setShowRemoveDialog] = useState<string | null>(null);

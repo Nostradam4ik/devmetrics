@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { integrationsAPI, Integration, JiraProject } from '@/lib/api/integrations';
 import { useToast } from '@/components/ui/toast';
 
-const ORG_ID = 'demo-org';
+const ORG_ID = '00000000-1234-1234-1234-000000000001';
 
 // ---------------------------------------------------------------------------
 // Slack Logo SVG
