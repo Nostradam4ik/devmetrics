@@ -61,37 +61,44 @@ const mockContributors = [
 // Real org UUID from the demo seed data
 const DEMO_ORG_ID = '00000000-1234-1234-1234-000000000001';
 
+// Fixed "today" for the lifetime of this module — prevents date from drifting
+// between renders/remounts and causing different query keys for the same period
+const TODAY = new Date().toISOString().split('T')[0];
+
 export default function AnalyticsPage() {
   const [selectedRange, setSelectedRange] = useState(14);
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
-  // Stable dates keyed on selectedRange — won't re-randomize on every render
+  // Stable dates — endStr is always TODAY (module-level constant),
+  // startStr only changes when selectedRange changes
   const { startStr, endStr } = useMemo(() => {
-    const end = new Date();
-    const start = new Date();
+    const start = new Date(TODAY);
     start.setDate(start.getDate() - selectedRange);
     return {
       startStr: start.toISOString().split('T')[0],
-      endStr: end.toISOString().split('T')[0],
+      endStr: TODAY,
     };
   }, [selectedRange]);
 
   const { data: commitSeries } = useQuery({
-    queryKey: ['timeseries-commits', DEMO_ORG_ID, selectedRange],
+    queryKey: ['timeseries-commits', DEMO_ORG_ID, startStr, endStr],
     queryFn: () => metricsAPI.getTimeSeries(DEMO_ORG_ID, 'commits', startStr, endStr),
+    staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   const { data: cycleSeries } = useQuery({
-    queryKey: ['timeseries-cycle', DEMO_ORG_ID, selectedRange],
+    queryKey: ['timeseries-cycle', DEMO_ORG_ID, startStr, endStr],
     queryFn: () => metricsAPI.getTimeSeries(DEMO_ORG_ID, 'cycle_time', startStr, endStr),
+    staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   const { data: teamMetrics } = useQuery({
-    queryKey: ['team-metrics-analytics', DEMO_ORG_ID, selectedRange],
+    queryKey: ['team-metrics-analytics', DEMO_ORG_ID, startStr, endStr],
     queryFn: () => metricsAPI.getTeamMetrics(DEMO_ORG_ID, startStr, endStr),
+    staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
