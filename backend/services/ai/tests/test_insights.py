@@ -19,7 +19,7 @@ async def test_root(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_generate_insights(client: AsyncClient, mock_openai):
+async def test_generate_insights(client: AsyncClient, mock_groq):
     response = await client.post(
         "/api/v1/insights/generate",
         json={
@@ -44,7 +44,7 @@ async def test_generate_insights(client: AsyncClient, mock_openai):
 
 
 @pytest.mark.asyncio
-async def test_generate_insights_missing_org(client: AsyncClient, mock_openai):
+async def test_generate_insights_missing_org(client: AsyncClient, mock_groq):
     response = await client.post(
         "/api/v1/insights/generate",
         json={"metrics_data": {"team_size": 5}},
@@ -53,7 +53,7 @@ async def test_generate_insights_missing_org(client: AsyncClient, mock_openai):
 
 
 @pytest.mark.asyncio
-async def test_query(client: AsyncClient, mock_openai):
+async def test_query(client: AsyncClient, mock_groq):
     response = await client.post(
         "/api/v1/insights/query",
         json={
@@ -70,7 +70,7 @@ async def test_query(client: AsyncClient, mock_openai):
 
 
 @pytest.mark.asyncio
-async def test_query_without_context(client: AsyncClient, mock_openai):
+async def test_query_without_context(client: AsyncClient, mock_groq):
     response = await client.post(
         "/api/v1/insights/query",
         json={"query": "How many commits did we have last week?"},
@@ -86,7 +86,7 @@ async def test_query_missing_query(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_weekly_report(client: AsyncClient, mock_openai):
+async def test_weekly_report(client: AsyncClient, mock_groq):
     response = await client.post(
         "/api/v1/insights/weekly-report",
         json={
@@ -134,7 +134,7 @@ async def test_mark_insight_read_not_found(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_suggestions(client: AsyncClient, mock_openai):
+async def test_suggestions(client: AsyncClient, mock_groq):
     response = await client.get(
         "/api/v1/insights/suggestions",
         params={"organization_id": "00000000-0000-0000-0000-000000000001"},
