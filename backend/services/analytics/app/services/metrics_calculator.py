@@ -280,9 +280,6 @@ class MetricsCalculator:
         data: List[Dict], start_date: datetime, end_date: datetime
     ) -> List[Dict]:
         """Fill missing dates in time series with zero values."""
-        if not data:
-            return []
-
         data_dict = {item["date"]: item["value"] for item in data}
 
         result = []

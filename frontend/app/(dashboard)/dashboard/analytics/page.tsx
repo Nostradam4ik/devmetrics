@@ -132,16 +132,16 @@ export default function AnalyticsPage() {
   const fallbackCommitData = useMemo(() => generateMockTimeSeries(selectedRange), [selectedRange]);
   const fallbackCycleData = useMemo(() => generateMockTimeSeries(selectedRange, 2, 24), [selectedRange]);
 
-  const commitData = commitSeries?.data || fallbackCommitData;
-  const cycleData = cycleSeries?.data || fallbackCycleData;
+  const commitData = (commitSeries?.data?.length ? commitSeries.data : null) || fallbackCommitData;
+  const cycleData = (cycleSeries?.data?.length ? cycleSeries.data : null) || fallbackCycleData;
   const contributors = teamMetrics?.top_contributors || mockContributors;
 
-  const totalCommits = commitData.reduce((s, d) => s + d.value, 0);
+  // Use teamMetrics (stable SQL aggregate) for summary cards — NOT the timeseries sum
+  // which can come from mock data and change on every period switch
+  const totalCommits = teamMetrics?.commits?.total ?? commitData.reduce((s, d) => s + d.value, 0);
   const avgCommitsPerDay = Math.round(totalCommits / selectedRange);
-  const avgCycleTime =
-    Math.round(
-      (cycleData.reduce((s, d) => s + d.value, 0) / cycleData.length) * 10
-    ) / 10;
+  const avgCycleTime = teamMetrics?.pull_requests?.avg_cycle_time_hours
+    ?? Math.round((cycleData.reduce((s, d) => s + d.value, 0) / cycleData.length) * 10) / 10;
 
   return (
     <div className="space-y-6">
