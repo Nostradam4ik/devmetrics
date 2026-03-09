@@ -22,10 +22,9 @@ const mockSummary: MetricsSummary = {
 const mockTimeSeries = Array.from({ length: 14 }, (_, i) => {
   const date = new Date();
   date.setDate(date.getDate() - (13 - i));
-  return {
-    date: date.toISOString().split('T')[0],
-    value: Math.floor(Math.random() * 30) + 10,
-  };
+  // Deterministic values — no Math.random() so data doesn't flicker on re-render
+  const value = [18, 24, 12, 31, 27, 15, 22, 19, 28, 33, 14, 25, 20, 30][i];
+  return { date: date.toISOString().split('T')[0], value };
 });
 
 const mockContributors = [

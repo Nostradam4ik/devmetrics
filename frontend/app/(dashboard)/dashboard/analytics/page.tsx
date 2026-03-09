@@ -25,15 +25,29 @@ const dateRanges = [
   { label: '90 days', days: 90 },
 ];
 
-const generateMockTimeSeries = (days: number, min = 5, max = 40) =>
-  Array.from({ length: days }, (_, i) => {
+// Seeded pseudo-random so the same (days, min, max, index) always gives the same value
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed + 1) * 10000;
+  return x - Math.floor(x);
+}
+
+// Cache keyed by "days-min-max" so switching periods never re-randomizes
+const mockSeriesCache = new Map<string, Array<{ date: string; value: number }>>();
+
+const generateMockTimeSeries = (days: number, min = 5, max = 40) => {
+  const key = `${days}-${min}-${max}`;
+  if (mockSeriesCache.has(key)) return mockSeriesCache.get(key)!;
+  const series = Array.from({ length: days }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - (days - 1 - i));
     return {
       date: date.toISOString().split('T')[0],
-      value: Math.floor(Math.random() * (max - min)) + min,
+      value: Math.floor(seededRandom(days * 1000 + i) * (max - min)) + min,
     };
   });
+  mockSeriesCache.set(key, series);
+  return series;
+};
 
 const mockContributors = [
   { github_login: 'alice', commits: 42, additions: 3200, deletions: 800 },
