@@ -61,7 +61,7 @@ def mock_groq():
     with patch("app.services.groq_service.groq_service") as mock:
         mock.generate_insights = AsyncMock(return_value={
             "summary": "Team is performing well with 245 commits this week.",
-            "model_used": "llama-3.1-70b-versatile",
+            "model_used": "llama-3.3-70b-versatile",
             "generated_at": "2024-01-01T00:00:00",
         })
         mock.generate_weekly_report = AsyncMock(
@@ -73,5 +73,5 @@ def mock_groq():
         mock.generate_completion = AsyncMock(
             return_value='[{"title": "Reduce PR size", "description": "Keep PRs small", "priority": "high", "category": "process"}]'
         )
-        mock.model = "llama-3.1-70b-versatile"
+        mock.model = "llama-3.3-70b-versatile"
         yield mock

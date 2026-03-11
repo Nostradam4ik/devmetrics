@@ -23,7 +23,7 @@ class GroqService:
             base_url="https://api.groq.com/openai/v1",
         )
 
-        self.model = os.getenv("GROQ_MODEL", "llama-3.1-70b-versatile")
+        self.model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
         self.max_tokens = int(os.getenv("GROQ_MAX_TOKENS", "1500"))
         self.temperature = float(os.getenv("GROQ_TEMPERATURE", "0.7"))
 
