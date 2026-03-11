@@ -1,4 +1,21 @@
-import apiClient from '@/lib/api-client';
+import axios from 'axios';
+
+const AI_URL = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8004';
+
+// Dedicated client for the AI service (port 8004) — apiClient points to auth (8001)
+const aiClient = axios.create({
+  baseURL: `${AI_URL}/api/v1`,
+  timeout: 60000, // Groq can be slow on first call
+  headers: { 'Content-Type': 'application/json' },
+});
+
+aiClient.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('access_token');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export interface Insight {
   id: string;
@@ -41,14 +58,14 @@ export const insightsAPI = {
     if (type) params.append('type', type);
     params.append('limit', String(limit));
 
-    const response = await apiClient.get<InsightListResponse>(
-      `/ai/api/v1/insights/list?${params}`
+    const response = await aiClient.get<InsightListResponse>(
+      `/insights/list?${params}`
     );
     return response.data;
   },
 
   generate: async (organizationId: string, metricsData: Record<string, unknown>) => {
-    const response = await apiClient.post('/ai/api/v1/insights/generate', {
+    const response = await aiClient.post('/insights/generate', {
       organization_id: organizationId,
       metrics_data: metricsData,
     });
@@ -59,8 +76,8 @@ export const insightsAPI = {
     organizationId: string,
     metricsData: Record<string, unknown>
   ): Promise<WeeklyReportResponse> => {
-    const response = await apiClient.post<WeeklyReportResponse>(
-      '/ai/api/v1/insights/weekly-report',
+    const response = await aiClient.post<WeeklyReportResponse>(
+      '/insights/weekly-report',
       {
         organization_id: organizationId,
         metrics_data: metricsData,
@@ -73,8 +90,8 @@ export const insightsAPI = {
     queryText: string,
     contextData?: Record<string, unknown>
   ): Promise<QueryResponse> => {
-    const response = await apiClient.post<QueryResponse>(
-      '/ai/api/v1/insights/query',
+    const response = await aiClient.post<QueryResponse>(
+      '/insights/query',
       {
         query: queryText,
         context_data: contextData,
@@ -84,15 +101,15 @@ export const insightsAPI = {
   },
 
   getSuggestions: async (organizationId: string) => {
-    const response = await apiClient.get<{ success: boolean; suggestions: Suggestion[] }>(
-      `/ai/api/v1/insights/suggestions?organization_id=${organizationId}`
+    const response = await aiClient.get<{ success: boolean; suggestions: Suggestion[] }>(
+      `/insights/suggestions?organization_id=${organizationId}`
     );
     return response.data;
   },
 
   markAsRead: async (insightId: string) => {
-    const response = await apiClient.patch(
-      `/ai/api/v1/insights/${insightId}/read`
+    const response = await aiClient.patch(
+      `/insights/${insightId}/read`
     );
     return response.data;
   },

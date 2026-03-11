@@ -54,7 +54,7 @@ class InsightListItem(BaseModel):
     summary: Optional[str]
     severity: Optional[str]
     category: Optional[str]
-    is_read: bool
+    is_read: Optional[bool] = False
     generated_at: datetime
 
     class Config:
