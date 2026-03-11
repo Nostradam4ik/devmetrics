@@ -6,6 +6,7 @@
 --     -c "$(cat backend/scripts/refresh_data.sql)"
 
 -- Clear old data
+DELETE FROM pr_reviews;
 DELETE FROM commits;
 DELETE FROM pull_requests;
 
@@ -71,9 +72,29 @@ SELECT
   NOW()
 FROM generate_series(1, 60) s;
 
+-- Insert ~40 PR reviews for merged PRs
+INSERT INTO pr_reviews (id, pull_request_id, reviewer_id, github_review_id,
+                        state, body, review_time_hours, submitted_at, created_at)
+SELECT
+  gen_random_uuid(),
+  pr.id,
+  (SELECT id FROM developers ORDER BY random() LIMIT 1),
+  floor(random()*900000+100000)::int,
+  (ARRAY['approved','changes_requested','commented','approved','approved'])[floor(random()*5+1)::int],
+  (ARRAY['LGTM!','Please fix the edge case','Looks good, approved.',NULL])[floor(random()*4+1)::int],
+  random()*24+0.5,
+  pr.created_at + (random() * interval '24 hours'),
+  NOW()
+FROM pull_requests pr
+WHERE pr.state = 'merged'
+ORDER BY random()
+LIMIT 40
+ON CONFLICT DO NOTHING;
+
 -- Verify
 SELECT
   (SELECT COUNT(*) FROM commits) as commits,
   (SELECT MIN(committed_at)::date FROM commits) as oldest_commit,
   (SELECT MAX(committed_at)::date FROM commits) as newest_commit,
-  (SELECT COUNT(*) FROM pull_requests) as prs;
+  (SELECT COUNT(*) FROM pull_requests) as prs,
+  (SELECT COUNT(*) FROM pr_reviews) as reviews;
