@@ -118,10 +118,9 @@ export default function DashboardPage() {
     retry: false,
   });
 
-  const stats = summary || mockSummary;
-  const chartData = timeSeries?.data || mockTimeSeries;
-  const contributors =
-    (teamMetrics as TeamMetrics)?.top_contributors || mockContributors;
+  const stats = summary ?? mockSummary;
+  const chartData = timeSeries?.data?.length ? timeSeries.data : mockTimeSeries;
+  const contributors = (teamMetrics as TeamMetrics)?.top_contributors ?? mockContributors;
 
   return (
     <div className="space-y-6">

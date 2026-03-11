@@ -137,7 +137,7 @@ export default function AnalyticsPage() {
 
   const commitData = (commitSeries?.data?.length ? commitSeries.data : null) || fallbackCommitData;
   const cycleData = (cycleSeries?.data?.length ? cycleSeries.data : null) || fallbackCycleData;
-  const contributors = teamMetrics?.top_contributors || mockContributors;
+  const contributors = teamMetrics?.top_contributors ?? mockContributors;
 
   // Use teamMetrics (stable SQL aggregate) for summary cards — NOT the timeseries sum
   // which can come from mock data and change on every period switch

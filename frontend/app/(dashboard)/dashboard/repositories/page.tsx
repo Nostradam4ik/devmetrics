@@ -124,7 +124,7 @@ export default function RepositoriesPage() {
     },
   });
 
-  const repositories = repoData?.repositories || mockRepositories;
+  const repositories = repoData?.repositories ?? mockRepositories;
 
   return (
     <div className="space-y-6">

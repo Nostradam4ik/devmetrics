@@ -133,8 +133,8 @@ export default function InsightsPage() {
     },
   });
 
-  const insights = insightsData?.insights || mockInsights;
-  const suggestions = suggestionsData?.suggestions || [];
+  const insights = insightsData?.insights ?? mockInsights;
+  const suggestions = suggestionsData?.suggestions ?? [];
 
   const unreadCount = insights.filter((i) => !i.is_read).length;
   const warningCount = insights.filter(
