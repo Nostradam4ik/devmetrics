@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AIChat from '@/components/ai-chat';
 import { insightsAPI, type Insight } from '@/lib/api/insights';
+import { metricsAPI } from '@/lib/api/metrics';
 
 const severityVariant: Record<string, string> = {
   high: 'destructive',
@@ -95,17 +96,29 @@ export default function InsightsPage() {
     retry: false,
   });
 
+  // Real team metrics from DB — used for Generate Insights + Weekly Report
+  const { data: teamMetrics } = useQuery({
+    queryKey: ['team-metrics-insights', orgId],
+    queryFn: () => metricsAPI.getTeamMetrics(orgId),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const generateMutation = useMutation({
     mutationFn: () =>
       insightsAPI.generate(orgId, {
-        team_size: 12,
-        active_developers: 8,
-        commits: { total: 245, additions: 12000, deletions: 3400 },
+        team_size: teamMetrics?.team_size ?? 0,
+        active_developers: teamMetrics?.active_developers ?? 0,
+        commits: {
+          total: teamMetrics?.commits?.total ?? 0,
+          additions: teamMetrics?.commits?.additions ?? 0,
+          deletions: teamMetrics?.commits?.deletions ?? 0,
+        },
         pull_requests: {
-          total: 32,
-          merged: 28,
-          merge_rate: 87,
-          avg_cycle_time_hours: 18,
+          total: teamMetrics?.pull_requests?.total ?? 0,
+          merged: teamMetrics?.pull_requests?.merged ?? 0,
+          merge_rate: teamMetrics?.pull_requests?.merge_rate ?? 0,
+          avg_cycle_time_hours: teamMetrics?.pull_requests?.avg_cycle_time_hours ?? 0,
         },
       }),
     onSuccess: () => {
@@ -114,20 +127,39 @@ export default function InsightsPage() {
   });
 
   const reportMutation = useMutation({
-    mutationFn: () =>
-      insightsAPI.weeklyReport(orgId, {
-        team_size: 12,
-        active_developers: 8,
-        start_date: new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0],
-        end_date: new Date().toISOString().split('T')[0],
-        commits: { total: 245, additions: 12000, deletions: 3400, avg_per_developer: 31 },
-        pull_requests: { total: 32, merged: 28, merge_rate: 87, avg_cycle_time_hours: 18 },
-        reviews: { total: 45, avg_review_time_hours: 4.5 },
-        top_contributors: [
-          { github_login: 'alice', commits: 42, additions: 3200 },
-          { github_login: 'bob', commits: 38, additions: 2800 },
-        ],
-      }),
+    mutationFn: () => {
+      const end = new Date().toISOString().split('T')[0];
+      const start = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+      const topContributors = (teamMetrics?.top_contributors ?? [])
+        .slice(0, 5)
+        .map((c: { github_login: string; commits: number; additions: number }) => ({
+          github_login: c.github_login,
+          commits: c.commits,
+          additions: c.additions,
+        }));
+      return insightsAPI.weeklyReport(orgId, {
+        team_size: teamMetrics?.team_size ?? 0,
+        active_developers: teamMetrics?.active_developers ?? 0,
+        start_date: start,
+        end_date: end,
+        commits: {
+          total: teamMetrics?.commits?.total ?? 0,
+          additions: teamMetrics?.commits?.additions ?? 0,
+          deletions: teamMetrics?.commits?.deletions ?? 0,
+          avg_per_developer: teamMetrics?.active_developers
+            ? Math.round((teamMetrics.commits?.total ?? 0) / teamMetrics.active_developers)
+            : 0,
+        },
+        pull_requests: {
+          total: teamMetrics?.pull_requests?.total ?? 0,
+          merged: teamMetrics?.pull_requests?.merged ?? 0,
+          merge_rate: teamMetrics?.pull_requests?.merge_rate ?? 0,
+          avg_cycle_time_hours: teamMetrics?.pull_requests?.avg_cycle_time_hours ?? 0,
+        },
+        reviews: { total: 0, avg_review_time_hours: 0 },
+        top_contributors: topContributors,
+      });
+    },
     onSuccess: (data) => {
       setWeeklyReport(data.report);
     },
