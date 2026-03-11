@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { keepPreviousData } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 import {
   Card,
@@ -81,25 +82,27 @@ export default function AnalyticsPage() {
     };
   }, [selectedRange]);
 
+  // gcTime: 30min keeps all 4 period caches alive during the whole session
+  // placeholderData: keepPreviousData shows the previous period's data while
+  // the new one loads — so the summary cards never fall back to mock values
+  const QUERY_OPTS = { staleTime: 5 * 60 * 1000, gcTime: 30 * 60 * 1000, retry: false, placeholderData: keepPreviousData } as const;
+
   const { data: commitSeries } = useQuery({
     queryKey: ['timeseries-commits', DEMO_ORG_ID, startStr, endStr],
     queryFn: () => metricsAPI.getTimeSeries(DEMO_ORG_ID, 'commits', startStr, endStr),
-    staleTime: 5 * 60 * 1000,
-    retry: false,
+    ...QUERY_OPTS,
   });
 
   const { data: cycleSeries } = useQuery({
     queryKey: ['timeseries-cycle', DEMO_ORG_ID, startStr, endStr],
     queryFn: () => metricsAPI.getTimeSeries(DEMO_ORG_ID, 'cycle_time', startStr, endStr),
-    staleTime: 5 * 60 * 1000,
-    retry: false,
+    ...QUERY_OPTS,
   });
 
   const { data: teamMetrics } = useQuery({
     queryKey: ['team-metrics-analytics', DEMO_ORG_ID, startStr, endStr],
     queryFn: () => metricsAPI.getTeamMetrics(DEMO_ORG_ID, startStr, endStr),
-    staleTime: 5 * 60 * 1000,
-    retry: false,
+    ...QUERY_OPTS,
   });
 
   const handleExportPDF = async () => {
