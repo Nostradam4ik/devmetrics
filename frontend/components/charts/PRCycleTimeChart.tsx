@@ -60,7 +60,7 @@ export default function PRCycleTimeChart({ data }: PRCycleTimeChartProps) {
             border: '1px solid #e5e7eb',
             boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
           }}
-          formatter={(value: number) => [`${value}h`, 'Cycle Time']}
+          formatter={(value) => [`${value ?? 0}h`, 'Cycle Time']}
         />
         <Bar dataKey="hours" radius={[4, 4, 0, 0]}>
           {formatted.map((entry, index) => (

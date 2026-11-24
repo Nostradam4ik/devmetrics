@@ -39,15 +39,18 @@ export function TableRowSkeleton({ cols = 4 }: { cols?: number }) {
   );
 }
 
+// Fixed heights: Math.random() during render is impure and differs between server and client.
+const CHART_SKELETON_HEIGHTS = [64, 96, 48, 120, 80, 140, 72, 104, 56, 132, 88, 60, 112, 76]
+
 export function ChartSkeleton() {
   return (
     <div className="space-y-3">
       <div className="flex items-end space-x-2 h-48">
-        {Array.from({ length: 14 }).map((_, i) => (
+        {CHART_SKELETON_HEIGHTS.map((height, i) => (
           <div key={i} className="flex-1 flex flex-col justify-end">
             <Skeleton
               className="w-full rounded-t-sm"
-              style={{ height: `${Math.random() * 120 + 20}px` }}
+              style={{ height: `${height}px` }}
             />
           </div>
         ))}

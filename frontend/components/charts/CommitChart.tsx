@@ -62,7 +62,7 @@ export default function CommitChart({ data }: CommitChartProps) {
           }}
           labelStyle={{ color: isDark ? '#cbd5e1' : '#374151' }}
           labelFormatter={(label) => `Date: ${label}`}
-          formatter={(value: number) => [value, 'Commits']}
+          formatter={(value) => [value ?? 0, 'Commits']}
         />
         <Area
           type="monotone"

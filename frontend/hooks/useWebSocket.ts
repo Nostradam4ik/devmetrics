@@ -56,6 +56,8 @@ export function useWebSocket({
 
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  // Lets the reconnect timer call the latest connect() without referencing it before it is declared.
+  const connectRef = useRef<() => void>(() => {});
 
   const connect = useCallback(() => {
     if (!orgId) return;
@@ -100,7 +102,7 @@ export function useWebSocket({
 
       if (autoReconnect) {
         reconnectTimeoutRef.current = setTimeout(() => {
-          if (mountedRef.current) connect();
+          if (mountedRef.current) connectRef.current();
         }, reconnectDelayRef.current);
 
         reconnectDelayRef.current = Math.min(
@@ -114,6 +116,10 @@ export function useWebSocket({
       ws.close();
     };
   }, [orgId, onMessage, autoReconnect]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     mountedRef.current = true;

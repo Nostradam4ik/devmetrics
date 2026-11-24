@@ -21,6 +21,8 @@ export function LiveSyncStatus() {
     if (latest.type === 'sync') {
       if (latest.title === 'Sync started') {
         const repo = latest.description.replace("Syncing repository \"", '').replace('\"…', '');
+        // Mirrors an external notification stream into local state, which is what an effect is for.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSyncState({ repo, status: 'syncing', message: latest.description });
         return;
       }
