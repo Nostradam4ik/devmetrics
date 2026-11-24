@@ -1,14 +1,8 @@
 name: Deploy to Production
 
+# Manual only: there is no production server behind this project, so a push to
+# main must not try to deploy. Run it from the Actions tab once one exists.
 on:
-  push:
-    branches: [main]
-    # Only deploy when functional code changes — not docs/tests alone
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'infrastructure/load-tests/**'
-
   workflow_dispatch:
     inputs:
       service:
