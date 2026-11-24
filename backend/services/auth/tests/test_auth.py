@@ -144,7 +144,7 @@ async def test_get_current_user(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_get_current_user_no_token(client: AsyncClient):
     response = await client.get("/api/v1/auth/me")
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 @pytest.mark.asyncio

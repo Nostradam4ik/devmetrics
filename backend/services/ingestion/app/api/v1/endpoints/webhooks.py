@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException
 from app.schemas.webhook import WebhookResponse
 from app.workers.github_sync import sync_repository
-from app.core.database import AsyncSessionLocal
+from app.core.database import get_db
 from app.models.repository import Repository
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 import hmac
 import hashlib
 
@@ -11,7 +12,7 @@ router = APIRouter()
 
 
 @router.post("/github", response_model=WebhookResponse)
-async def github_webhook(request: Request):
+async def github_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     """
     Handle GitHub webhook events.
 
@@ -28,14 +29,13 @@ async def github_webhook(request: Request):
         return WebhookResponse(status="ignored", message="No repository in payload")
 
     # Find repository in our system
-    async with AsyncSessionLocal() as db:
-        result = await db.execute(
-            select(Repository).where(
-                Repository.full_name == repo_full_name,
-                Repository.is_active == True,  # noqa: E712
-            )
+    result = await db.execute(
+        select(Repository).where(
+            Repository.full_name == repo_full_name,
+            Repository.is_active == True,  # noqa: E712
         )
-        repo = result.scalar_one_or_none()
+    )
+    repo = result.scalar_one_or_none()
 
     if not repo:
         return WebhookResponse(
