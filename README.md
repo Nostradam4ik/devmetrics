@@ -197,4 +197,4 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full production guide inclu
 
 ## License
 
-MIT License — Copyright (c) 2026 Andrii Zhmuryk
+MIT License, see [LICENSE](LICENSE). Copyright (c) 2026 Andrii Zhmuryk
