@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Node.js 20+](https://img.shields.io/badge/node-20+-green.svg)](https://nodejs.org/)
+[![Node.js 22+](https://img.shields.io/badge/node-22+-green.svg)](https://nodejs.org/)
 
 > AI-Powered Developer Analytics Platform to track team productivity, analyze code metrics, and get actionable insights.
 
@@ -33,7 +33,7 @@ Two things worth knowing before you read the code:
 - **Integrations** — Slack notifications, Jira project tracking
 - **Export** — PDF/CSV reports, email delivery
 - **Real-time** — WebSocket notifications, live sync status
-- **Modern UI** — Next.js 15 + Tailwind CSS + shadcn/ui
+- **Modern UI** — Next.js 16 + Tailwind CSS + shadcn/ui
 
 ## Architecture
 
@@ -57,7 +57,7 @@ DevMetrics (Microservices)
 │   └── Groq (Llama 3.3 70B) insights + weekly reports
 │
 └── Frontend (Port 3000)
-    └── Next.js 15 React app
+    └── Next.js 16 React app
 ```
 
 ## Tech Stack
@@ -71,9 +71,9 @@ DevMetrics (Microservices)
 - Groq API (Llama 3.3 70B)
 
 **Frontend:**
-- Next.js 15 (App Router)
+- Next.js 16 (App Router)
 - TypeScript
-- Tailwind CSS
+- Tailwind CSS 3
 - TanStack Query
 - Recharts (charts)
 - shadcn/ui (components)
@@ -95,7 +95,7 @@ DevMetrics (Microservices)
 
 - Docker & Docker Compose
 - Python 3.11+
-- Node.js 20+
+- Node.js 22+
 - GitHub account (for OAuth)
 - Groq API key (optional, for AI features)
 
@@ -151,7 +151,7 @@ npm run dev
 
 ```
 devmetrics/
-├── frontend/              # Next.js 15 App
+├── frontend/              # Next.js 16 App
 │   ├── app/               # App Router pages
 │   ├── components/        # React components
 │   ├── hooks/             # Custom hooks
