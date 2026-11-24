@@ -211,6 +211,7 @@ jobs:
       - name: Run tests
         env:
           OPENAI_API_KEY: sk-test-key-not-real
+          GROQ_API_KEY: gsk-test-key-not-real
           REDIS_URL: redis://localhost:6379/0
         run: pytest tests/ -v --tb=short
 

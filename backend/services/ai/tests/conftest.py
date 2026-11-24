@@ -57,8 +57,8 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
 
 @pytest.fixture
 def mock_groq():
-    """Mock OpenAI service to avoid real API calls in tests."""
-    with patch("app.services.groq_service.groq_service") as mock:
+    """Mock the Groq service where the endpoints use it, so no real API call is made."""
+    with patch("app.api.v1.endpoints.insights.groq_service") as mock:
         mock.generate_insights = AsyncMock(return_value={
             "summary": "Team is performing well with 245 commits this week.",
             "model_used": "llama-3.3-70b-versatile",

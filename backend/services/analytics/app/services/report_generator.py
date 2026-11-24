@@ -236,10 +236,10 @@ class ReportGenerator:
         """Render metrics as a PDF and return bytes."""
         try:
             from weasyprint import HTML  # lazy import — optional dependency
-        except ImportError:
-            raise RuntimeError(
-                "WeasyPrint is not installed. Add weasyprint to requirements.txt."
-            )
+        except (ImportError, OSError) as exc:
+            # ImportError: package missing. OSError: the native Pango/GObject
+            # libraries WeasyPrint needs are missing from the host.
+            raise RuntimeError(f"WeasyPrint is not available: {exc}") from exc
 
         template = cls._jinja_env.from_string(_PDF_TEMPLATE)
         html_content = template.render(

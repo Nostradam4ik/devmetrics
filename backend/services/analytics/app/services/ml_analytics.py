@@ -125,7 +125,10 @@ class MLAnalyticsService:
             change_pct = round((slope * len(x)) / mean_val * 100, 1)
 
         if r_squared < 0.2:
-            trend = "volatile"
+            # No linear trend: decide between noisy-around-a-level and flat
+            # using the coefficient of variation.
+            cv = (_std(y) / mean_val) if mean_val > 0 else 0.0
+            trend = "volatile" if cv > 0.5 else "stable"
         elif slope > 0.1:
             trend = "increasing"
         elif slope < -0.1:

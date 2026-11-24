@@ -20,6 +20,11 @@ from app.services.metrics_calculator import MetricsCalculator
 from app.services.ml_analytics import ml_service
 
 router = APIRouter()
+
+
+def _has_activity(series) -> bool:
+    """The calculator zero-fills empty days, so an empty org is a series of zeros."""
+    return any(point["value"] for point in series)
 logger = logging.getLogger(__name__)
 
 
@@ -57,7 +62,7 @@ async def velocity_trend(
         granularity="day",
     )
 
-    if not time_series:
+    if not _has_activity(time_series):
         raise HTTPException(status_code=404, detail="No time series data found for this organization.")
 
     result = ml_service.analyze_velocity_trend(time_series)
@@ -94,7 +99,7 @@ async def detect_anomalies(
         granularity="day",
     )
 
-    if not time_series:
+    if not _has_activity(time_series):
         raise HTTPException(status_code=404, detail="No time series data found.")
 
     result = ml_service.detect_anomalies(time_series, method=method)
@@ -230,7 +235,7 @@ async def sprint_prediction(
         granularity="day",
     )
 
-    if not daily_series:
+    if not _has_activity(daily_series):
         raise HTTPException(status_code=404, detail="No commit data found for this organization.")
 
     # Aggregate daily into sprint buckets

@@ -1,9 +1,13 @@
-from fastapi import APIRouter, Depends, Query
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
 from typing import Optional
 from app.core.database import get_db
 from app.core.cache import cache_service
+from app.models.developer import Developer
 from app.services.metrics_calculator import MetricsCalculator
 
 router = APIRouter()
@@ -18,6 +22,20 @@ async def get_developer_metrics(
     db: AsyncSession = Depends(get_db),
 ):
     """Get metrics for a specific developer."""
+    try:
+        developer_uuid = uuid.UUID(developer_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Developer not found.")
+
+    exists = await db.execute(
+        select(Developer.id).where(
+            Developer.id == developer_uuid,
+            Developer.organization_id == organization_id,
+        )
+    )
+    if exists.first() is None:
+        raise HTTPException(status_code=404, detail="Developer not found.")
+
     end = datetime.fromisoformat(end_date) if end_date else datetime.utcnow()
     start = (
         datetime.fromisoformat(start_date) if start_date else end - timedelta(days=30)
@@ -72,10 +90,14 @@ async def get_team_metrics(
 @router.get("/timeseries")
 async def get_time_series(
     organization_id: str = Query(...),
-    metric_type: str = Query(..., description="Type: commits, prs, additions"),
+    metric_type: str = Query(
+        ..., pattern="^(commits|prs|additions)$", description="Type: commits, prs, additions"
+    ),
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    granularity: str = Query("day", description="Granularity: day, week, month"),
+    granularity: str = Query(
+        "day", pattern="^(day|week|month)$", description="Granularity: day, week, month"
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     """Get time series data for charts."""

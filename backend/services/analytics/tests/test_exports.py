@@ -89,8 +89,7 @@ class TestPdfExport:
         """Mock WeasyPrint so tests don't need a full browser environment."""
         fake_pdf = b"%PDF-1.4 fake pdf content"
         with patch(
-            "app.services.report_generator.ReportGenerator.generate_team_pdf",
-            new_callable=AsyncMock,
+            "app.services.report_generator.ReportGenerator.generate_pdf",
             return_value=fake_pdf,
         ):
             response = await client.get(
@@ -105,8 +104,7 @@ class TestPdfExport:
     async def test_pdf_content_disposition_filename(self, client: AsyncClient):
         fake_pdf = b"%PDF-1.4 fake"
         with patch(
-            "app.services.report_generator.ReportGenerator.generate_team_pdf",
-            new_callable=AsyncMock,
+            "app.services.report_generator.ReportGenerator.generate_pdf",
             return_value=fake_pdf,
         ):
             response = await client.get(
@@ -140,12 +138,11 @@ class TestEmailExport:
     async def test_send_email_success(self, client: AsyncClient):
         """Mock SMTP delivery — verify endpoint returns success."""
         with patch(
-            "app.services.email_report_service.EmailReportService.send_team_report",
+            "app.services.email_report_service.EmailReportService.send_report",
             new_callable=AsyncMock,
             return_value=True,
         ), patch(
-            "app.services.report_generator.ReportGenerator.generate_team_pdf",
-            new_callable=AsyncMock,
+            "app.services.report_generator.ReportGenerator.generate_pdf",
             return_value=b"%PDF fake",
         ):
             response = await client.post(

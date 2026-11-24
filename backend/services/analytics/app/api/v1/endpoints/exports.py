@@ -7,7 +7,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import Response, StreamingResponse
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -142,7 +142,7 @@ async def export_timeseries_csv(
 
 class ScheduleReportRequest(BaseModel):
     organization_id: str
-    recipients: List[str]
+    recipients: List[EmailStr] = Field(..., min_length=1)
     report_title: str = "Weekly Team Report"
     days: int = 7
 

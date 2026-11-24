@@ -45,9 +45,9 @@ class TestStd:
         assert _std([5, 5, 5, 5]) == 0.0
 
     def test_known_values(self):
-        # std([2, 4, 4, 4, 5, 5, 7, 9]) = 2.0 (sample std)
+        # 2.0 is the population std of this set; the sample std (n-1) is 2.138
         result = _std([2, 4, 4, 4, 5, 5, 7, 9])
-        assert abs(result - 2.0) < 0.01
+        assert abs(result - 2.138) < 0.01
 
 
 class TestLinearRegression:

@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
+from uuid import UUID
 
 
 class RepositoryCreate(BaseModel):
@@ -15,13 +16,14 @@ class RepositoryCreate(BaseModel):
 
 
 class RepositoryUpdate(BaseModel):
+    description: Optional[str] = None
     is_active: Optional[bool] = None
     github_access_token: Optional[str] = None
 
 
 class RepositoryResponse(BaseModel):
-    id: str
-    organization_id: str
+    id: UUID
+    organization_id: UUID
     github_repo_id: int
     full_name: str
     name: str
